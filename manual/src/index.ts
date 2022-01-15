@@ -1,11 +1,52 @@
 type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] }
+import { ApolloServerBase } from 'apollo-server-core'
 
-async function handleGraphqlQuery() {
-  return new Response(`{"ok":true}`, {
-    headers: {
-      'content-type': 'application/json',
+async function handleGraphqlQuery(request: Request) {
+  const server = new ApolloServerBase({
+    typeDefs: `
+type User {
+  id: ID!
+  username: String
+  email: String
+}
+
+type Query {
+  getUserByUsername(username: String): User
+  getUserById(id: ID!): User
+}
+`,
+    resolvers: {
+      Query: {
+        getUserByUsername: (...args) => {
+          console.log({ args })
+          return {
+            email: 'yeah@nah.org',
+          }
+        },
+      },
     },
   })
+  const result = await server.executeOperation({
+    query: await request.text(),
+    variables: {},
+  })
+  console.log(result)
+  const { errors, data } = result
+
+  if (errors) {
+    return new Response(JSON.stringify({ ok: false, errors }), {
+      headers: {
+        'content-type': 'application/json',
+      },
+      status: 400
+    })
+  } else {
+    return new Response(JSON.stringify({ ok: true, data }), {
+      headers: {
+        'content-type': 'application/json',
+      },
+    })
+  }
 }
 
 const worker: WithRequired<ExportedHandler<Bindings>, 'fetch'> = {
@@ -13,7 +54,7 @@ const worker: WithRequired<ExportedHandler<Bindings>, 'fetch'> = {
     // Match route against pattern /:name/*action
     const { pathname } = new URL(request.url)
     if (pathname === '/graphql' && request.method === 'POST') {
-      return handleGraphqlQuery()
+      return handleGraphqlQuery(request)
     } else {
       return new Response('Not found', { status: 404 })
     }
