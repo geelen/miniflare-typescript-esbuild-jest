@@ -3,7 +3,17 @@ export class HoloDB_User implements DurableObject {
   constructor(private readonly state: DurableObjectState) {}
 
   async fetch(request: Request) {
-    return new Response(`{"holodb":true}`, {
+    const { pathname } = new URL(request.url)
+    console.log(pathname)
+    if (!(pathname === '/subquery' && request.method === 'POST')) {
+      return new Response('Not found', {status: 404})
+    }
+    const body = await request.text()
+    console.log({body})
+
+    return new Response(JSON.stringify({
+      email: 'lololol'
+    }), {
       headers: {
         'content-type': 'application/json',
       },
