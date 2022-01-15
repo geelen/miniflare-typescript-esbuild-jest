@@ -4,8 +4,7 @@ import { ctx } from './utils'
 test("should redirect to example page on no route match", async () => {
   const env = getMiniflareBindings();
   const res = await worker.fetch(new Request("http://localhost"), env, ctx);
-  expect(res.status).toBe(302);
-  expect(res.headers.get("Location")).toBe("http://localhost/test/increment");
+  expect(res.status).toBe(404);
 });
 
 /*
@@ -34,7 +33,7 @@ test("should pass-through to durable object", async () => {
   const storage = await getMiniflareDurableObjectStorage(id);
   await storage.put("count", 20);
 
-  const req = new Request("http://localhost/name/increment", {
+  const req = new Request("http://localhost/graphql", {
     method: 'POST',
     body: `
       query {
@@ -51,7 +50,7 @@ test("should pass-through to durable object", async () => {
   });
   const res = await worker.fetch(req, env, ctx);
   expect(res.status).toBe(200);
-  expect(await res.text()).toContain("⬆️ 11");
+  expect(await res.json()).toMatchObject({ok: true});
 
   const newValue = await storage.get("count");
   expect(newValue).toBe(11);
