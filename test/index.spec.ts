@@ -39,7 +39,6 @@ test('single object, single field', async () => {
       query {
         getUserByUsername(username: "glen") {
           email
-          username
         }
       }
     `,
@@ -47,7 +46,11 @@ test('single object, single field', async () => {
   const res = await worker.fetch(req, env, ctx)
   expect([res.status, await res.json()]).toMatchObject([
     200,
-    { ok: true, data: { getUserByUsername: { email: 'glen@glen.com' } } },
+    {
+      ok: true,
+      errors: [],
+      data: { getUserByUsername: { email: 'glen@glen.com' } },
+    },
   ])
 })
 

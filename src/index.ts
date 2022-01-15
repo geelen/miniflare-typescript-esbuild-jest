@@ -1,9 +1,9 @@
 import {GraphQLResolveInfo} from "graphql";
 
 type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] }
-import { ApolloServerBase } from 'apollo-server-core'
+import { ApolloServerBase } from 'apollo-server-core/src/ApolloServer'
 
-async function handleGraphqlQuery(request: Request) {
+async function handleGraphqlQuery(request: Request, env: Bindings) {
   const server = new ApolloServerBase({
     typeDefs: `
 type User {
@@ -26,17 +26,26 @@ type Query {
 `,
     resolvers: {
       Query: {
-        getUserByUsername: (parent, { username }, ctx, info) => {
+        getUserByUsername: async (parent, { username }, ctx, info) => {
           console.log(username)
           // console.log(info)
           // console.log(info.fieldNodes[0].arguments![0])
-          console.log(info.fieldNodes[0].selectionSet)
-          console.log(info.fieldNodes[0].selectionSet!.selections)
-          // console.log(info.returnType)
-          // console.log(info.operation)
-          return {
-            email: 'yeah@nah.org',
-          }
+          const subQueryNodes = info.fieldNodes[0].selectionSet!.selections
+          console.log({subQueryNodes})
+
+          const { HOLODB_USER } = env
+          const id = HOLODB_USER.idFromName(username)
+          const stub = HOLODB_USER.get(id)
+          const body2 = JSON.stringify(subQueryNodes);
+          console.log({body2})
+          const response = await stub.fetch('https://holo.db/subquery', {
+            method: 'POST',
+            body: body2
+          })
+          console.log({response})
+          const body = await response.json()
+          console.log({body})
+          return body
         },
       },
     },
@@ -56,7 +65,7 @@ type Query {
       status: 400
     })
   } else {
-    return new Response(JSON.stringify({ ok: true, data }), {
+    return new Response(JSON.stringify({ ok: true, errors: [], data }), {
       headers: {
         'content-type': 'application/json',
       },
@@ -69,7 +78,7 @@ const worker: WithRequired<ExportedHandler<Bindings>, 'fetch'> = {
     // Match route against pattern /:name/*action
     const { pathname } = new URL(request.url)
     if (pathname === '/graphql' && request.method === 'POST') {
-      return handleGraphqlQuery(request)
+      return handleGraphqlQuery(request, env)
     } else {
       return new Response('Not found', { status: 404 })
     }
