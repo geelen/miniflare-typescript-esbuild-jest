@@ -3,6 +3,10 @@ export class HoloDB_User implements DurableObject {
   constructor(private readonly state: DurableObjectState) {}
 
   async fetch(request: Request) {
-    return new Response('hi.')
+    return new Response(`{"holodb":true}`, {
+      headers: {
+        'content-type': 'application/json',
+      },
+    })
   }
 }

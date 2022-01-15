@@ -37,15 +37,17 @@ test('single object, single field', async () => {
     method: 'POST',
     body: `
       query {
-        userByUsername(username: 'glen') {
+        getUserByUsername(username: "glen") {
           email
         }
       }
     `,
   })
   const res = await worker.fetch(req, env, ctx)
-  expect(res.status).toBe(200)
-  expect(await res.json()).toMatchObject({ user: { email: 'glen@glen.com' } })
+  expect([res.status, await res.json()]).toMatchObject([
+    200,
+    { ok: true, data: { getUserByUsername: { email: 'glen@glen.com' } } },
+  ])
 })
 
 test.skip('should pass-through to durable object', async () => {
@@ -71,8 +73,10 @@ test.skip('should pass-through to durable object', async () => {
     `,
   })
   const res = await worker.fetch(req, env, ctx)
-  expect(res.status).toBe(200)
-  expect(await res.json()).toMatchObject({ ok: true })
+  expect({
+    status: res.status,
+    body: await res.json(),
+  }).toMatchObject({ ok: true })
 
   const newValue = await storage.get('count')
   expect(newValue).toBe(11)
