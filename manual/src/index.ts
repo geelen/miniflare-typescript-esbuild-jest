@@ -1,3 +1,5 @@
+import {GraphQLResolveInfo} from "graphql";
+
 type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] }
 import { ApolloServerBase } from 'apollo-server-core'
 
@@ -8,6 +10,13 @@ type User {
   id: ID!
   username: String
   email: String
+  posts: [Post]
+}
+
+type Post {
+  id: ID!
+  title: String
+  author: User
 }
 
 type Query {
@@ -17,8 +26,14 @@ type Query {
 `,
     resolvers: {
       Query: {
-        getUserByUsername: (...args) => {
-          console.log({ args })
+        getUserByUsername: (parent, { username }, ctx, info) => {
+          console.log(username)
+          // console.log(info)
+          // console.log(info.fieldNodes[0].arguments![0])
+          console.log(info.fieldNodes[0].selectionSet)
+          console.log(info.fieldNodes[0].selectionSet!.selections)
+          // console.log(info.returnType)
+          // console.log(info.operation)
           return {
             email: 'yeah@nah.org',
           }

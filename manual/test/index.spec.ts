@@ -39,6 +39,7 @@ test('single object, single field', async () => {
       query {
         getUserByUsername(username: "glen") {
           email
+          username
         }
       }
     `,
