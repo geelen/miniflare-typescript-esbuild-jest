@@ -36,4 +36,5 @@ const worker: WithRequired<ExportedHandler<Bindings>, 'fetch'> = {
 
 // Make sure we export the Counter Durable Object class
 export { Counter } from './counter'
+export { HoloDB_User } from './holodb.generated'
 export default worker

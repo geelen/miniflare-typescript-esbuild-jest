@@ -11,7 +11,8 @@ compatibility_flags = []
 
 [durable_objects]
 bindings = [
-  { name = "COUNTER", class_name = "Counter" }
+  { name = "COUNTER", class_name = "Counter" },
+  { name = "HOLODB_USER", class_name = "HoloDB_User" }
 ]
 
 [[migrations]]

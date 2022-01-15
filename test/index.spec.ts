@@ -1,11 +1,11 @@
-import worker from "@/index";
+import worker from '@/index'
 import { ctx } from './utils'
 
-test("should redirect to example page on no route match", async () => {
-  const env = getMiniflareBindings();
-  const res = await worker.fetch(new Request("http://localhost"), env, ctx);
-  expect(res.status).toBe(404);
-});
+test('should redirect to example page on no route match', async () => {
+  const env = getMiniflareBindings()
+  const res = await worker.fetch(new Request('http://localhost'), env, ctx)
+  expect(res.status).toBe(404)
+})
 
 /*
 *
@@ -26,14 +26,36 @@ class Post {
 
 * */
 
-test("should pass-through to durable object", async () => {
-  const env = getMiniflareBindings();
-  const { COUNTER } = env;
-  const id = COUNTER.idFromName("name");
-  const storage = await getMiniflareDurableObjectStorage(id);
-  await storage.put("count", 20);
+test('single object, single field', async () => {
+  const env = getMiniflareBindings()
+  const { HOLODB_USER } = env
+  const id = HOLODB_USER.idFromName('glen')
+  const storage = await getMiniflareDurableObjectStorage(id)
+  await storage.put('email', 'glen@glen.com')
 
-  const req = new Request("http://localhost/graphql", {
+  const req = new Request('http://localhost/graphql', {
+    method: 'POST',
+    body: `
+      query {
+        userByUsername(username: 'glen') {
+          email
+        }
+      }
+    `,
+  })
+  const res = await worker.fetch(req, env, ctx)
+  expect(res.status).toBe(200)
+  expect(await res.json()).toMatchObject({ user: { email: 'glen@glen.com' } })
+})
+
+test.skip('should pass-through to durable object', async () => {
+  const env = getMiniflareBindings()
+  const { COUNTER, HOLODB_USER } = env
+  const id = HOLODB_USER.idFromName('glen')
+  const storage = await getMiniflareDurableObjectStorage(id)
+  await storage.put('email', 'glen@glen.com')
+
+  const req = new Request('http://localhost/graphql', {
     method: 'POST',
     body: `
       query {
@@ -46,12 +68,12 @@ test("should pass-through to durable object", async () => {
           }
         }
       }
-    `
-  });
-  const res = await worker.fetch(req, env, ctx);
-  expect(res.status).toBe(200);
-  expect(await res.json()).toMatchObject({ok: true});
+    `,
+  })
+  const res = await worker.fetch(req, env, ctx)
+  expect(res.status).toBe(200)
+  expect(await res.json()).toMatchObject({ ok: true })
 
-  const newValue = await storage.get("count");
-  expect(newValue).toBe(11);
-});
+  const newValue = await storage.get('count')
+  expect(newValue).toBe(11)
+})
