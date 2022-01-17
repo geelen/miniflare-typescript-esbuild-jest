@@ -1,13 +1,4 @@
-import worker from '@/index'
 import { createObject, ctx, testGraphql, updateObject } from './utils'
-// @ts-ignore
-import mapValuesDeep from 'map-values-deep'
-
-test('should redirect to example page on no route match', async () => {
-  const env = getMiniflareBindings()
-  const res = await worker.fetch(new Request('http://localhost'), env, ctx)
-  expect(res.status).toBe(404)
-})
 
 describe('single User', () => {
   beforeEach(async () => {
@@ -24,6 +15,7 @@ describe('single User', () => {
         query {
           getUserByUsername(username: "glen") {
             email
+            # createdAt
           }
         }
       `,
@@ -34,6 +26,7 @@ describe('single User', () => {
         data: {
           getUserByUsername: {
             email: 'glen@glen.com',
+            // createdAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/)
           },
         },
       }
