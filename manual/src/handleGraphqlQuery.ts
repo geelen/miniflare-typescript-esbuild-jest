@@ -9,9 +9,7 @@ const getBySurrogateKey = (NAMESPACE: DurableObjectNamespace) => async (
   info: GraphQLResolveInfo
 ) => {
   const key = Object.values(args)[0]
-  console.log({ key })
   const subQueryNodes = info.fieldNodes[0].selectionSet!.selections
-  console.log({ subQueryNodes })
 
   const id = NAMESPACE.idFromName(key)
   const stub = NAMESPACE.get(id)
@@ -37,7 +35,6 @@ export async function handleGraphqlQuery(request: Request, env: Bindings) {
     query: await request.text(),
     variables: {},
   })
-  console.log(result)
   const { errors, data } = result
 
   if (errors) {
