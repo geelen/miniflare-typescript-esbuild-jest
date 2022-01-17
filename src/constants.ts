@@ -12,6 +12,7 @@ export const schema = `
     slug: String
     title: String
     author: User
+    body: String
   }
   
   type Query {

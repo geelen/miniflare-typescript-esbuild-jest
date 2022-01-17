@@ -1,5 +1,5 @@
 import worker from '@/index'
-import { ctx, testGraphql } from './utils'
+import { createObject, ctx, testGraphql } from './utils'
 // @ts-ignore
 import mapValuesDeep from 'map-values-deep'
 
@@ -11,12 +11,11 @@ test('should redirect to example page on no route match', async () => {
 
 describe('single User', () => {
   beforeEach(async () => {
-    const env = getMiniflareBindings()
-    const { HOLODB_USER } = env
-    const id = HOLODB_USER.idFromName('glen')
-    const storage = await getMiniflareDurableObjectStorage(id)
-    await storage.put('email', 'glen@glen.com')
-    await storage.put('avatar', 'https://www.fillmurray.com/200/200')
+    await createObject(
+      'HOLODB_USER',
+      { username: 'glen' },
+      { email: 'glen@glen.com', avatar: 'https://www.fillmurray.com/200/200' }
+    )
   })
 
   test('single field', async () => {
@@ -68,19 +67,20 @@ describe('single User', () => {
 
 describe('single Post', () => {
   beforeEach(async () => {
-    const env = getMiniflareBindings()
-    const { HOLODB_USER, HOLODB_POST } = env
-    const userId = HOLODB_USER.idFromName('glen')
-    {
-      const storage = await getMiniflareDurableObjectStorage(userId)
-      await storage.put('username', 'glen')
-    }
-    {
-      const id = HOLODB_POST.idFromName('1-best-cats')
-      const storage = await getMiniflareDurableObjectStorage(id)
-      await storage.put('title', 'Best Cats')
-      await storage.put('author', userId)
-    }
+    const userId = await createObject(
+      'HOLODB_USER',
+      { username: 'glen' },
+      { email: 'glen@glen.com', avatar: 'https://www.fillmurray.com/200/200' }
+    )
+    await createObject(
+      'HOLODB_POST',
+      { slug: '1-best-cats' },
+      {
+        title: 'Best Cats',
+        author: userId,
+        body: `# The World's Best Cats\n\n* Principles\n* Whitney`,
+      }
+    )
   })
 
   test('single field', async () => {
@@ -99,6 +99,70 @@ describe('single Post', () => {
         data: {
           getPostBySlug: {
             title: 'Best Cats',
+          },
+        },
+      }
+    )
+  })
+
+  test('single ref', async () => {
+    await testGraphql(
+      `
+        query {
+          getPostBySlug(slug: "1-best-cats") {
+            title
+            author {
+              username
+            }
+          }
+        }
+      `,
+      200,
+      {
+        ok: true,
+        errors: [],
+        data: {
+          getPostBySlug: {
+            title: 'Best Cats',
+            author: {
+              username: 'glen',
+            },
+          },
+        },
+      }
+    )
+  })
+
+  test('more fields', async () => {
+    await testGraphql(
+      `
+        query {
+          getPostBySlug(slug: "1-best-cats") {
+            title
+            slug
+            body
+            author {
+              username
+              email
+              avatar
+            }
+          }
+        }
+      `,
+      200,
+      {
+        ok: true,
+        errors: [],
+        data: {
+          getPostBySlug: {
+            title: 'Best Cats',
+            slug: '1-best-cats',
+            body: `# The World's Best Cats\n\n* Principles\n* Whitney`,
+            author: {
+              username: 'glen',
+              email: 'glen@glen.com',
+              avatar: 'https://www.fillmurray.com/200/200',
+            },
           },
         },
       }
