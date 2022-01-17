@@ -1,14 +1,18 @@
 import { ApolloServerBase } from 'apollo-server-core'
 import { schema } from '@/constants'
-import { getBySurrogateKey } from '@/utils'
+import { getBySurrogateKey, createWithSurrogateKey, getById } from '@/utils'
 
 export async function handleGraphqlQuery(request: Request, env: Bindings) {
   const server = new ApolloServerBase({
     typeDefs: schema,
     resolvers: {
       Query: {
+        getUserById: getById(env.HOLODB_USER),
         getUserByUsername: getBySurrogateKey(env.HOLODB_USER),
         getPostBySlug: getBySurrogateKey(env.HOLODB_POST),
+      },
+      Mutation: {
+        createUser: createWithSurrogateKey(env.HOLODB_USER, 'username'),
       },
     },
   })

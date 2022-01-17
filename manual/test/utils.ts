@@ -16,10 +16,12 @@ export async function testGraphql(
     }
   })
   const res = await worker.fetch(req, env, ctx)
+  const json = await res.json();
   expect([
     res.status,
-    mapValuesDeep(await res.json(), (x: any) => (x === null ? '<null>' : x)),
+    mapValuesDeep(json, (x: any) => (x === null ? '<null>' : x)),
   ]).toStrictEqual([status, expected])
+  return json as any
 }
 
 export const ctx: ExecutionContext = {
