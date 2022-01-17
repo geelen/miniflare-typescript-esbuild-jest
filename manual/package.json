@@ -7,7 +7,9 @@
   "scripts": {
     "build": "node build.js",
     "dev": "miniflare --live-reload --debug",
-    "test": "npm run build && node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test": "yarn build && yarn types:check && yarn test:run",
+    "test:run": "npm run build && node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "concurrently -k -c red,green 'yarn build --watch' 'yarn test:run --watch'",
     "types:check": "tsc && tsc -p test/tsconfig.json"
   },
   "keywords": [],
@@ -25,8 +27,10 @@
     "typescript": "^4.4.4"
   },
   "dependencies": {
+    "@esbuild-plugins/node-modules-polyfill": "^0.1.4",
     "@types/js-yaml": "^4.0.5",
-    "apollo-server-cloudflare": "^3.6.1",
+    "apollo-server-core": "^3.6.1",
+    "concurrently": "^7.0.0",
     "graphql": "^16.2.0",
     "graphql-tag": "^2.12.6",
     "js-yaml": "^4.1.0",
