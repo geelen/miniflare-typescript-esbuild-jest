@@ -20,24 +20,8 @@ const worker: WithRequired<ExportedHandler<Bindings>, 'fetch'> = {
     } else {
       return new Response('Not found', { status: 404 })
     }
-
-    // const match = /\/(?<name>[^/]+)(?<action>.*)/.exec(url.pathname)
-    // if (!match?.groups) {
-    //   // If we didn't specify a name, default to "test"
-    //   return Response.redirect(`${url.origin}/test/increment`, 302)
-    // }
-    //
-    // // Forward the request to the named Durable Object...
-    // const { COUNTER } = env
-    // const id = COUNTER.idFromName(match.groups.name)
-    // const stub = COUNTER.get(id)
-    // // ...removing the name prefix from URL
-    // url.pathname = match.groups.action
-    // return stub.fetch(url.toString())
   },
 }
 
-// Make sure we export the Counter Durable Object class
-export { Counter } from './counter'
 export { HoloDB_User, HoloDB_Post } from './holodb.generated'
 export default worker

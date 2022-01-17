@@ -11,14 +11,9 @@ compatibility_flags = []
 
 [durable_objects]
 bindings = [
-  { name = "COUNTER", class_name = "Counter" },
   { name = "HOLODB_USER", class_name = "HoloDB_User" },
   { name = "HOLODB_POST", class_name = "HoloDB_Post" }
 ]
-
-[[migrations]]
-tag = "v1"
-new_classes = ["Counter"]
 
 [build]
 command = "npm run build"
