@@ -8,6 +8,7 @@ type User {
   id: ID!
   username: String
   email: String
+  avatar: String
   posts: [Post]
 }
 
@@ -76,7 +77,11 @@ const worker: WithRequired<ExportedHandler<Bindings>, 'fetch'> = {
     // Match route against pattern /:name/*action
     const { pathname } = new URL(request.url)
     if (pathname === '/graphql' && request.method === 'POST') {
-      return handleGraphqlQuery(request, env)
+      try {
+        return handleGraphqlQuery(request, env)
+      } catch (e: any) {
+        return new Response(`${e.message}`, { status: 500 })
+      }
     } else {
       return new Response('Not found', { status: 404 })
     }
