@@ -7,10 +7,9 @@
   "scripts": {
     "build": "node build.js",
     "dev": "miniflare --live-reload --debug",
-    "test": "yarn build && yarn test:run",
-    "test:run": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "test:watch:maybe-one-day": "concurrently -k -c red,green 'yarn build --watch' 'yarn test:run --watch'",
-    "test:watch": "chokidar 'src/**' 'test/**' -c 'npm run test' --initial",
+    "test": "yarn build && yarn test:all",
+    "test:all": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "concurrently -k -c red,green 'yarn build --watch' 'yarn test:all --watchAll'",
     "types:check": "tsc && tsc -p test/tsconfig.json"
   },
   "keywords": [],

@@ -17,28 +17,20 @@ function CreateModel(
 
     async fetch(request: Request) {
       const { pathname } = new URL(request.url)
-      console.log(pathname)
       if (!(pathname === '/subquery' && request.method === 'POST')) {
         return new Response('Not found', { status: 404 })
       }
       const subquery = (await request.json()) as ReadonlyArray<SelectionNode>
-
-      console.log('BINDINGS')
-      console.log(this.env)
-
       const subqueryResponse: any = {}
 
       for (const field of subquery) {
-        console.log(field)
         if (isFieldNode(field)) {
           const fieldName = field.name.value
           if (PRIMITIVE_FIELDS[fieldName]) {
             subqueryResponse[fieldName] = await this.state.storage.get(fieldName)
           } else if (SINGLE_REF_FIELDS[fieldName]) {
             if (field.selectionSet) {
-              console.log('OMFG ITS GONNA HAPPEN')
               const refId = (await this.state.storage.get(fieldName)) as string
-              console.log({ refId })
               const NAMESPACE = this.env[SINGLE_REF_FIELDS[fieldName]]
               const id = NAMESPACE.idFromString(refId!)
               const stub = NAMESPACE.get(id)
@@ -48,7 +40,6 @@ function CreateModel(
                 body: JSON.stringify(field.selectionSet.selections),
               })
               const subRequest = await response.json()
-              console.log({ subRequest })
               subqueryResponse[fieldName] = subRequest
             } else {
               console.log(

@@ -1,14 +1,16 @@
 export default {
-  preset: "ts-jest/presets/default-esm",
+  preset: 'ts-jest/presets/default-esm',
   globals: {
-    "ts-jest": {
-      tsconfig: "test/tsconfig.json",
+    'ts-jest': {
+      tsconfig: 'test/tsconfig.json',
       useESM: true,
     },
   },
   moduleNameMapper: {
-    "^@/(.*)$": "<rootDir>/src/$1",
-    "^(\\.{1,2}/.*)\\.js$": "$1",
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^(\\.{1,2}/.*)\\.js$': '$1',
   },
-  testEnvironment: "miniflare",
-};
+  testEnvironment: 'miniflare',
+  // Src files are watched by esbuild
+  watchPathIgnorePatterns: ['<rootDir>/src']
+}
