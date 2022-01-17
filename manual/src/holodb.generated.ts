@@ -5,8 +5,8 @@ const isFieldNode = (field: SelectionNode): field is FieldNode =>
 
 function CreateModel(
   PRIMITIVE_FIELDS: { [k: string]: string },
-  USER_REFS_SINGLE: string[],
-  USER_REFS_COLLECTION: string[]
+  SINGLE_REF_FIELDS: { [k: string]: keyof Bindings },
+  COLLECTION_REF_FIELDS: { [k: string]: keyof Bindings }
 ) {
   return class HoloDB_Base implements DurableObject {
     // Store this.state for later access
@@ -29,10 +29,32 @@ function CreateModel(
       const subqueryResponse: any = {}
 
       for (const field of subquery) {
+        console.log(field)
         if (isFieldNode(field)) {
           const fieldName = field.name.value
           if (PRIMITIVE_FIELDS[fieldName]) {
             subqueryResponse[fieldName] = await this.state.storage.get(fieldName)
+          } else if (SINGLE_REF_FIELDS[fieldName]) {
+            if (field.selectionSet) {
+              console.log('OMFG ITS GONNA HAPPEN')
+              const refId = (await this.state.storage.get(fieldName)) as string
+              console.log({ refId })
+              const NAMESPACE = this.env[SINGLE_REF_FIELDS[fieldName]]
+              const id = NAMESPACE.idFromString(refId!)
+              const stub = NAMESPACE.get(id)
+
+              const response = await stub.fetch('https://holo.db/subquery', {
+                method: 'POST',
+                body: JSON.stringify(field.selectionSet.selections),
+              })
+              const subRequest = await response.json()
+              console.log({ subRequest })
+              subqueryResponse[fieldName] = subRequest
+            } else {
+              console.log(
+                `Query requested reference to '${fieldName}' but didn't specify any selection fields!`
+              )
+            }
           } else {
             const myFields = Object.keys(PRIMITIVE_FIELDS).join(', ')
             console.log(
@@ -43,7 +65,6 @@ function CreateModel(
           console.log(`HoloDB only supports straight Fields, not ${field.kind}!`)
         }
       }
-      console.log({ subquery })
 
       return new Response(JSON.stringify(subqueryResponse), {
         headers: {
@@ -60,14 +81,18 @@ export const HoloDB_User = CreateModel(
     email: 'string',
     avatar: 'string',
   },
-  [],
-  []
+  {},
+  {}
 )
 
 export const HoloDB_Post = CreateModel(
   {
+    slug: 'string',
     title: 'string',
+    body: 'string'
   },
-  [],
-  []
+  {
+    author: 'HOLODB_USER',
+  },
+  {}
 )
