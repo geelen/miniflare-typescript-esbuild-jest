@@ -7,9 +7,10 @@
   "scripts": {
     "build": "node build.js",
     "dev": "miniflare --live-reload --debug",
-    "test": "yarn build && yarn types:check && yarn test:run",
-    "test:run": "npm run build && node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "test:watch": "concurrently -k -c red,green 'yarn build --watch' 'yarn test:run --watch'",
+    "test": "yarn build && yarn test:run",
+    "test:run": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch:maybe-one-day": "concurrently -k -c red,green 'yarn build --watch' 'yarn test:run --watch'",
+    "test:watch": "chokidar 'src/**' 'test/**' -c 'npm run test' --initial",
     "types:check": "tsc && tsc -p test/tsconfig.json"
   },
   "keywords": [],
@@ -30,6 +31,7 @@
     "@esbuild-plugins/node-modules-polyfill": "^0.1.4",
     "@types/js-yaml": "^4.0.5",
     "apollo-server-core": "^3.6.1",
+    "chokidar-cli": "^3.0.0",
     "concurrently": "^7.0.0",
     "graphql": "^16.2.0",
     "graphql-tag": "^2.12.6",
