@@ -1,5 +1,5 @@
 import worker from '@/index'
-import { createObject, ctx, testGraphql } from './utils'
+import { createObject, ctx, testGraphql, updateObject } from './utils'
 // @ts-ignore
 import mapValuesDeep from 'map-values-deep'
 
@@ -170,34 +170,75 @@ describe('single Post', () => {
   })
 })
 
-test.skip('should pass-through to durable object', async () => {
-  const env = getMiniflareBindings()
-  const { HOLODB_USER } = env
-  const id = HOLODB_USER.idFromName('glen')
-  const storage = await getMiniflareDurableObjectStorage(id)
-  await storage.put('email', 'glen@glen.com')
+describe.only('User with Posts', () => {
+  beforeEach(async () => {
+    const userId = await createObject(
+      'HOLODB_USER',
+      { username: 'glen' },
+      { email: 'glen@glen.com', avatar: 'https://www.fillmurray.com/200/200' }
+    )
+    const post1 = await createObject(
+      'HOLODB_POST',
+      { slug: '1-best-cats' },
+      {
+        title: 'Best Cats',
+        author: userId,
+        body: `# The World's Best Cats\n\n* Principles\n* Whitney`,
+      }
+    )
+    const post2 = await createObject(
+      'HOLODB_POST',
+      { slug: '2-also-good-animals' },
+      {
+        title: 'Animals That Are Also Good',
+        author: userId,
+        body: `# Animals That Are Also Good\n\n* Stevie\n* Buster`,
+      }
+    )
+    const post3 = await createObject(
+      'HOLODB_POST',
+      { slug: '3-biggest-cat' },
+      {
+        title: 'Biggest Cat',
+        author: userId,
+        body: `# Biggest Cat?\n\n* Principles!`,
+      }
+    )
+    await updateObject('HOLODB_USER', userId, {
+      posts: [post1, post2, post3],
+    })
+  })
 
-  const req = new Request('http://localhost/graphql', {
-    method: 'POST',
-    body: `
-      query {
-        userByUsername(username: 'glen') {
-          id
-          email
-          avatar
-          posts {
-            title
+  test('graph across collection', async () => {
+    await testGraphql(
+      `
+        query {
+          getUserByUsername(username: "glen") {
+            email
+            avatar
+            posts {
+              title
+              slug
+            }
           }
         }
+      `,
+      200,
+      {
+        ok: true,
+        errors: [],
+        data: {
+          getUserByUsername: {
+            email: 'glen@glen.com',
+            avatar: 'https://www.fillmurray.com/200/200',
+            posts: [
+              {title:'Best Cats', slug:'1-best-cats'},
+              {title:'Animals That Are Also Good', slug:'2-also-good-animals'},
+              {title:'Biggest Cat', slug:'3-biggest-cat'},
+            ]
+          },
+        },
       }
-    `,
+    )
   })
-  const res = await worker.fetch(req, env, ctx)
-  expect({
-    status: res.status,
-    body: await res.json(),
-  }).toMatchObject({ ok: true })
-
-  const newValue = await storage.get('count')
-  expect(newValue).toBe(11)
 })

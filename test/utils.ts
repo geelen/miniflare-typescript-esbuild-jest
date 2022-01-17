@@ -27,11 +27,25 @@ export async function createObject(
 ) {
   const env = getMiniflareBindings()
   const [keyField, key] = Object.entries(surrogate)[0]
-  const id = env[namespace].idFromName(key)
-  const storage = await getMiniflareDurableObjectStorage(id)
+  const ref = env[namespace].idFromName(key)
+  const storage = await getMiniflareDurableObjectStorage(ref)
   await storage.put(keyField, key)
   for (const [k, value] of Object.entries(fields)) {
     await storage.put(k, value)
   }
-  return id.toString()
+  return ref.toString()
+}
+
+export async function updateObject(
+  namespace: keyof Bindings,
+  id: string,
+  fields: { [k: string]: any }
+) {
+  const env = getMiniflareBindings()
+  const ref = env[namespace].idFromString(id)
+  const storage = await getMiniflareDurableObjectStorage(ref)
+  for (const [k, value] of Object.entries(fields)) {
+    await storage.put(k, value)
+  }
+  return ref.toString()
 }
