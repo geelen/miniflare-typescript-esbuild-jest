@@ -23,7 +23,7 @@ function CreateModel(
       const subquery = (await request.json()) as ReadonlyArray<SelectionNode>
       const subqueryResponse: any = {}
 
-      for (const field of subquery) {
+      await Promise.all(subquery.map(async field => {
         if (isFieldNode(field)) {
           const fieldName = field.name.value
           if (PRIMITIVE_FIELDS[fieldName]) {
@@ -55,7 +55,7 @@ function CreateModel(
         } else {
           console.log(`HoloDB only supports straight Fields, not ${field.kind}!`)
         }
-      }
+      }))
 
       return new Response(JSON.stringify(subqueryResponse), {
         headers: {
