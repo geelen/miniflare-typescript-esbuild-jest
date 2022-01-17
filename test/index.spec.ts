@@ -16,7 +16,7 @@ describe('single object', () => {
     const id = HOLODB_USER.idFromName('glen')
     const storage = await getMiniflareDurableObjectStorage(id)
     await storage.put('email', 'glen@glen.com')
-    await storage.put('avatar', 'https://www.fillmurray.com/250/250')
+    await storage.put('avatar', 'https://www.fillmurray.com/200/200')
   })
 
   test('single field', async () => {
@@ -58,7 +58,7 @@ describe('single object', () => {
         data: {
           getUserByUsername: {
             email: 'glen@glen.com',
-            avatar: 'https://www.fillmurray.com/250/250',
+            avatar: 'https://www.fillmurray.com/200/200',
           },
         },
       }

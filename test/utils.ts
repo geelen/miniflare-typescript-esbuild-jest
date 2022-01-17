@@ -12,7 +12,7 @@ export async function testGraphql(query: string, status: number, expected: any) 
   expect([
     res.status,
     mapValuesDeep(await res.json(), (x: any) => x === null ? '<null>' : x)
-  ]).toMatchObject([status, expected])
+  ]).toStrictEqual([status, expected])
 }
 
 export const ctx: ExecutionContext = {
