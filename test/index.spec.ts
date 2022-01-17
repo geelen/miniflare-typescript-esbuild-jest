@@ -9,7 +9,7 @@ test('should redirect to example page on no route match', async () => {
   expect(res.status).toBe(404)
 })
 
-describe('single object', () => {
+describe('single User', () => {
   beforeEach(async () => {
     const env = getMiniflareBindings()
     const { HOLODB_USER } = env
@@ -59,6 +59,46 @@ describe('single object', () => {
           getUserByUsername: {
             email: 'glen@glen.com',
             avatar: 'https://www.fillmurray.com/200/200',
+          },
+        },
+      }
+    )
+  })
+})
+
+describe('single Post', () => {
+  beforeEach(async () => {
+    const env = getMiniflareBindings()
+    const { HOLODB_USER, HOLODB_POST } = env
+    const userId = HOLODB_USER.idFromName('glen')
+    {
+      const storage = await getMiniflareDurableObjectStorage(userId)
+      await storage.put('username', 'glen')
+    }
+    {
+      const id = HOLODB_POST.idFromName('1-best-cats')
+      const storage = await getMiniflareDurableObjectStorage(id)
+      await storage.put('title', 'Best Cats')
+      await storage.put('author', userId)
+    }
+  })
+
+  test('single field', async () => {
+    await testGraphql(
+      `
+        query {
+          getPostBySlug(slug: "1-best-cats") {
+            title
+          }
+        }
+      `,
+      200,
+      {
+        ok: true,
+        errors: [],
+        data: {
+          getPostBySlug: {
+            title: 'Best Cats',
           },
         },
       }

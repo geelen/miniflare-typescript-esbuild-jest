@@ -9,6 +9,7 @@ export const schema = `
   
   type Post {
     id: ID!
+    slug: String
     title: String
     author: User
   }
@@ -16,5 +17,7 @@ export const schema = `
   type Query {
     getUserByUsername(username: String): User
     getUserById(id: ID!): User
+    getPostBySlug(slug: String): Post
+    getPostById(id: ID!): Post
   }
 `

@@ -1,29 +1,35 @@
 import { ApolloServerBase } from 'apollo-server-core'
 import { schema } from '@/constants'
-import { SelectionNode } from 'graphql'
+import { GraphQLResolveInfo, SelectionNode } from 'graphql'
+
+const getBySurrogateKey = (NAMESPACE: DurableObjectNamespace) => async (
+  parent: any,
+  args: { [k: string]: string },
+  ctx: any,
+  info: GraphQLResolveInfo
+) => {
+  const key = Object.values(args)[0]
+  console.log({ key })
+  const subQueryNodes = info.fieldNodes[0].selectionSet!.selections
+  console.log({ subQueryNodes })
+
+  const id = NAMESPACE.idFromName(key)
+  const stub = NAMESPACE.get(id)
+
+  const response = await stub.fetch('https://holo.db/subquery', {
+    method: 'POST',
+    body: JSON.stringify(subQueryNodes),
+  })
+  return await response.json()
+}
 
 export async function handleGraphqlQuery(request: Request, env: Bindings) {
   const server = new ApolloServerBase({
     typeDefs: schema,
     resolvers: {
       Query: {
-        getUserByUsername: async (parent, { username }, ctx, info) => {
-          console.log(username)
-          // console.log(info)
-          // console.log(info.fieldNodes[0].arguments![0])
-          const subQueryNodes = info.fieldNodes[0].selectionSet!.selections
-          console.log({ subQueryNodes })
-
-          const { HOLODB_USER } = env
-          const id = HOLODB_USER.idFromName(username)
-          const stub = HOLODB_USER.get(id)
-
-          const response = await stub.fetch('https://holo.db/subquery', {
-            method: 'POST',
-            body: JSON.stringify(subQueryNodes),
-          })
-          return await response.json()
-        },
+        getUserByUsername: getBySurrogateKey(env.HOLODB_USER),
+        getPostBySlug: getBySurrogateKey(env.HOLODB_POST),
       },
     },
   })
