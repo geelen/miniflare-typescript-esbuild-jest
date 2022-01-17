@@ -1,76 +1,6 @@
+import { handleGraphqlQuery } from '@/handleGraphqlQuery'
+
 type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] }
-import { ApolloServerBase } from 'apollo-server-core'
-
-async function handleGraphqlQuery(request: Request, env: Bindings) {
-  const server = new ApolloServerBase({
-    typeDefs: `
-type User {
-  id: ID!
-  username: String
-  email: String
-  avatar: String
-  posts: [Post]
-}
-
-type Post {
-  id: ID!
-  title: String
-  author: User
-}
-
-type Query {
-  getUserByUsername(username: String): User
-  getUserById(id: ID!): User
-}
-`,
-    resolvers: {
-      Query: {
-        getUserByUsername: async (parent, { username }, ctx, info) => {
-          console.log(username)
-          // console.log(info)
-          // console.log(info.fieldNodes[0].arguments![0])
-          const subQueryNodes = info.fieldNodes[0].selectionSet!.selections
-          console.log({subQueryNodes})
-
-          const { HOLODB_USER } = env
-          const id = HOLODB_USER.idFromName(username)
-          const stub = HOLODB_USER.get(id)
-          const body2 = JSON.stringify(subQueryNodes);
-          console.log({body2})
-          const response = await stub.fetch('https://holo.db/subquery', {
-            method: 'POST',
-            body: body2
-          })
-          console.log({response})
-          const body = await response.json()
-          console.log({body})
-          return body
-        },
-      },
-    },
-  })
-  const result = await server.executeOperation({
-    query: await request.text(),
-    variables: {},
-  })
-  console.log(result)
-  const { errors, data } = result
-
-  if (errors) {
-    return new Response(JSON.stringify({ ok: false, errors }), {
-      headers: {
-        'content-type': 'application/json',
-      },
-      status: 400
-    })
-  } else {
-    return new Response(JSON.stringify({ ok: true, errors: [], data }), {
-      headers: {
-        'content-type': 'application/json',
-      },
-    })
-  }
-}
 
 const worker: WithRequired<ExportedHandler<Bindings>, 'fetch'> = {
   fetch: async function (request: Request, env: Bindings) {
@@ -80,7 +10,12 @@ const worker: WithRequired<ExportedHandler<Bindings>, 'fetch'> = {
       try {
         return handleGraphqlQuery(request, env)
       } catch (e: any) {
-        return new Response(`${e.message}`, { status: 500 })
+        return new Response(JSON.stringify([e.message, e.stack]), {
+          status: 500,
+          headers: {
+            'content-type': 'application/json',
+          },
+        })
       }
     } else {
       return new Response('Not found', { status: 404 })
