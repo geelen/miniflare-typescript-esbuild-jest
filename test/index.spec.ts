@@ -1,5 +1,5 @@
 import worker from '@/index'
-import {ctx} from './utils'
+import { ctx, testGraphql } from './utils'
 // @ts-ignore
 import mapValuesDeep from 'map-values-deep'
 
@@ -12,7 +12,7 @@ test('should redirect to example page on no route match', async () => {
 describe('single object', () => {
   beforeEach(async () => {
     const env = getMiniflareBindings()
-    const {HOLODB_USER} = env
+    const { HOLODB_USER } = env
     const id = HOLODB_USER.idFromName('glen')
     const storage = await getMiniflareDurableObjectStorage(id)
     await storage.put('email', 'glen@glen.com')
@@ -20,33 +20,30 @@ describe('single object', () => {
   })
 
   test('single field', async () => {
-    const env = getMiniflareBindings()
-    const req = new Request('http://localhost/graphql', {
-      method: 'POST',
-      body: `
+    await testGraphql(
+      `
         query {
           getUserByUsername(username: "glen") {
             email
           }
         }
       `,
-    })
-    const res = await worker.fetch(req, env, ctx)
-    expect([res.status, await res.json()]).toMatchObject([
       200,
       {
         ok: true,
         errors: [],
-        data: {getUserByUsername: {email: 'glen@glen.com'}},
-      },
-    ])
+        data: {
+          getUserByUsername: {
+            email: 'glen@glen.com',
+          },
+        },
+      }
+    )
   })
 
   test('two fields', async () => {
-    const env = getMiniflareBindings()
-    const req = new Request('http://localhost/graphql', {
-      method: 'POST',
-      body: `
+    await testGraphql(
+      `
         query {
           getUserByUsername(username: "glen") {
             email
@@ -54,21 +51,24 @@ describe('single object', () => {
           }
         }
       `,
-    })
-    const res = await worker.fetch(req, env, ctx)
-    expect([res.status, mapValuesDeep(await res.json(), (x: any) => x === null ? '<null>' : x)]).toMatchObject([200,
+      200,
       {
         ok: true,
         errors: [],
-        data: {getUserByUsername: {email: 'glen@glen.com', avatar: 'https://www.fillmurray.com/250/250'}},
-      }]
+        data: {
+          getUserByUsername: {
+            email: 'glen@glen.com',
+            avatar: 'https://www.fillmurray.com/250/250',
+          },
+        },
+      }
     )
   })
 })
 
 test.skip('should pass-through to durable object', async () => {
   const env = getMiniflareBindings()
-  const {COUNTER, HOLODB_USER} = env
+  const { HOLODB_USER } = env
   const id = HOLODB_USER.idFromName('glen')
   const storage = await getMiniflareDurableObjectStorage(id)
   await storage.put('email', 'glen@glen.com')
@@ -92,7 +92,7 @@ test.skip('should pass-through to durable object', async () => {
   expect({
     status: res.status,
     body: await res.json(),
-  }).toMatchObject({ok: true})
+  }).toMatchObject({ ok: true })
 
   const newValue = await storage.get('count')
   expect(newValue).toBe(11)
