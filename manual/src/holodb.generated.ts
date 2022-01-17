@@ -3,6 +3,21 @@ import { FieldNode, Kind, SelectionNode } from 'graphql'
 const isFieldNode = (field: SelectionNode): field is FieldNode =>
   field.kind === Kind.FIELD
 
+async function fetchSubquery(
+  NAMESPACE: DurableObjectNamespace,
+  refId: string,
+  fields: ReadonlyArray<SelectionNode>
+) {
+  const id = NAMESPACE.idFromString(refId!)
+  const stub = NAMESPACE.get(id)
+
+  const response = await stub.fetch('https://holo.db/subquery', {
+    method: 'POST',
+    body: JSON.stringify(fields),
+  })
+  return await response.json()
+}
+
 function CreateModel(
   PRIMITIVE_FIELDS: { [k: string]: string },
   SINGLE_REF_FIELDS: { [k: string]: keyof Bindings },
@@ -23,39 +38,52 @@ function CreateModel(
       const subquery = (await request.json()) as ReadonlyArray<SelectionNode>
       const subqueryResponse: any = {}
 
-      await Promise.all(subquery.map(async field => {
-        if (isFieldNode(field)) {
-          const fieldName = field.name.value
-          if (PRIMITIVE_FIELDS[fieldName]) {
-            subqueryResponse[fieldName] = await this.state.storage.get(fieldName)
-          } else if (SINGLE_REF_FIELDS[fieldName]) {
-            if (field.selectionSet) {
-              const refId = (await this.state.storage.get(fieldName)) as string
-              const NAMESPACE = this.env[SINGLE_REF_FIELDS[fieldName]]
-              const id = NAMESPACE.idFromString(refId!)
-              const stub = NAMESPACE.get(id)
-
-              const response = await stub.fetch('https://holo.db/subquery', {
-                method: 'POST',
-                body: JSON.stringify(field.selectionSet.selections),
-              })
-              const subRequest = await response.json()
-              subqueryResponse[fieldName] = subRequest
+      await Promise.all(
+        subquery.map(async (field) => {
+          if (isFieldNode(field)) {
+            const fieldName = field.name.value
+            if (PRIMITIVE_FIELDS[fieldName]) {
+              subqueryResponse[fieldName] = await this.state.storage.get(fieldName)
+            } else if (SINGLE_REF_FIELDS[fieldName]) {
+              if (field.selectionSet) {
+                const NAMESPACE = this.env[SINGLE_REF_FIELDS[fieldName]]
+                const refId = (await this.state.storage.get(fieldName)) as string
+                subqueryResponse[fieldName] = await fetchSubquery(
+                  NAMESPACE,
+                  refId,
+                  field.selectionSet.selections
+                )
+              } else {
+                console.log(
+                  `Query requested reference to '${fieldName}' but didn't specify any selection fields!`
+                )
+              }
+            } else if (COLLECTION_REF_FIELDS[fieldName]) {
+              if (field.selectionSet) {
+                const NAMESPACE = this.env[COLLECTION_REF_FIELDS[fieldName]]
+                const fields = field.selectionSet.selections
+                const refs = (await this.state.storage.get(fieldName)) as string[]
+                subqueryResponse[fieldName] = await Promise.all(
+                  refs.map(async (refId) => {
+                    return await fetchSubquery(NAMESPACE, refId, fields)
+                  })
+                )
+              } else {
+                console.log(
+                  `Query requested reference to '${fieldName}' but didn't specify any selection fields!`
+                )
+              }
             } else {
+              const myFields = Object.keys(PRIMITIVE_FIELDS).join(', ')
               console.log(
-                `Query requested reference to '${fieldName}' but didn't specify any selection fields!`
+                `Query requested '${fieldName}' but we only have the following keys: ${myFields}`
               )
             }
           } else {
-            const myFields = Object.keys(PRIMITIVE_FIELDS).join(', ')
-            console.log(
-              `Query requested '${fieldName}' but we only have the following keys: ${myFields}`
-            )
+            console.log(`HoloDB only supports straight Fields, not ${field.kind}!`)
           }
-        } else {
-          console.log(`HoloDB only supports straight Fields, not ${field.kind}!`)
-        }
-      }))
+        })
+      )
 
       return new Response(JSON.stringify(subqueryResponse), {
         headers: {
@@ -73,14 +101,16 @@ export const HoloDB_User = CreateModel(
     avatar: 'string',
   },
   {},
-  {}
+  {
+    posts: 'HOLODB_POST',
+  }
 )
 
 export const HoloDB_Post = CreateModel(
   {
     slug: 'string',
     title: 'string',
-    body: 'string'
+    body: 'string',
   },
   {
     author: 'HOLODB_USER',
