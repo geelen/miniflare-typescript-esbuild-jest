@@ -12,7 +12,7 @@ export class HoloDB_User implements DurableObject {
     console.log({body})
 
     return new Response(JSON.stringify({
-      email: 'lololol'
+      email: 'lololol2@three.com!'
     }), {
       headers: {
         'content-type': 'application/json',

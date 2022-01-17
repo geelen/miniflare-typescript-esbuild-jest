@@ -1,7 +1,5 @@
-import {GraphQLResolveInfo} from "graphql";
-
 type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] }
-import { ApolloServerBase } from 'apollo-server-core/src/ApolloServer'
+import { ApolloServerBase } from 'apollo-server-core'
 
 async function handleGraphqlQuery(request: Request, env: Bindings) {
   const server = new ApolloServerBase({
