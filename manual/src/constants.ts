@@ -1,25 +1,45 @@
 export const schema = `
-  type User {
-    id: ID!
-    username: String
+  input UserInput {
+    username: String!
     email: String
     avatar: String
-    createdAt: String
+  }
+  
+  type User {
+    id: ID!
+    createdAt: String!
+    username: String!
+    email: String
+    avatar: String
     posts: [Post]
+  }
+  
+  input PostInput {
+    slug: String!
+    title: String
+    body: String
   }
   
   type Post {
     id: ID!
-    slug: String
+    createdAt: String!
+    slug: String!
     title: String
-    author: User
     body: String
+    author: User
   }
   
   type Query {
-    getUserByUsername(username: String): User
     getUserById(id: ID!): User
-    getPostBySlug(slug: String): Post
+    getUserByUsername(username: String!): User
     getPostById(id: ID!): Post
+    getPostBySlug(slug: String!): Post
+  }
+  
+  type Mutation {
+    createUser(input: UserInput): User
+    updateUser(input: UserInput): User
+    createPost(input: PostInput): Post
+    updatePost(input: PostInput): Post
   }
 `

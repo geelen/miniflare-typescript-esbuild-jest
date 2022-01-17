@@ -11,14 +11,14 @@ describe('single User', () => {
 
   test('single field', async () => {
     await testGraphql(
-      `
+      {query: `
         query {
           getUserByUsername(username: "glen") {
             email
             # createdAt
           }
         }
-      `,
+      `},
       200,
       {
         ok: true,
