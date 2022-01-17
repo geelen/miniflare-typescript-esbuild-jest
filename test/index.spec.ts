@@ -170,7 +170,7 @@ describe('single Post', () => {
   })
 })
 
-describe.only('User with Posts', () => {
+describe('User with Posts', () => {
   beforeEach(async () => {
     const userId = await createObject(
       'HOLODB_USER',
