@@ -4,6 +4,7 @@ export const schema = `
     username: String
     email: String
     avatar: String
+    createdAt: String
     posts: [Post]
   }
   

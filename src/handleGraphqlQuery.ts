@@ -1,25 +1,6 @@
 import { ApolloServerBase } from 'apollo-server-core'
 import { schema } from '@/constants'
-import { GraphQLResolveInfo, SelectionNode } from 'graphql'
-
-const getBySurrogateKey = (NAMESPACE: DurableObjectNamespace) => async (
-  parent: any,
-  args: { [k: string]: string },
-  ctx: any,
-  info: GraphQLResolveInfo
-) => {
-  const key = Object.values(args)[0]
-  const subQueryNodes = info.fieldNodes[0].selectionSet!.selections
-
-  const id = NAMESPACE.idFromName(key)
-  const stub = NAMESPACE.get(id)
-
-  const response = await stub.fetch('https://holo.db/subquery', {
-    method: 'POST',
-    body: JSON.stringify(subQueryNodes),
-  })
-  return await response.json()
-}
+import { getBySurrogateKey } from '@/utils'
 
 export async function handleGraphqlQuery(request: Request, env: Bindings) {
   const server = new ApolloServerBase({
