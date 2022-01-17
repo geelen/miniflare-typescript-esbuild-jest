@@ -1,18 +1,24 @@
 import { createObject, ctx, testGraphql, updateObject } from './utils'
 
-describe('single User', () => {
-  beforeEach(async () => {
-  })
+describe('new User', () => {
+  beforeEach(async () => {})
 
-  test.skip('single field', async () => {
+  test('create & retrieve', async () => {
     await testGraphql(
-      `
-        query {
-          getUserByUsername(username: "glen") {
-            email
+      {
+        query: `
+        mutation CreateUser($input: UserInput) {
+          createUser(input: $input) {
+            id
           }
         }
       `,
+        variables: {
+          $input: {
+            hi: 'get fucked',
+          },
+        },
+      },
       200,
       {
         ok: true,

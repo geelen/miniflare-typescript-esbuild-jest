@@ -2,11 +2,18 @@ import worker from '@/index'
 // @ts-ignore
 import mapValuesDeep from 'map-values-deep'
 
-export async function testGraphql(query: string, status: number, expected: any) {
+export async function testGraphql(
+  query: string | { query: string; variables?: any },
+  status: number,
+  expected: any
+) {
   const env = getMiniflareBindings()
   const req = new Request('http://localhost/graphql', {
     method: 'POST',
-    body: query,
+    body: JSON.stringify(typeof query === 'string' ? { query } : query),
+    headers: {
+      'content-type': 'application/json'
+    }
   })
   const res = await worker.fetch(req, env, ctx)
   expect([
