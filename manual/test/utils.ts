@@ -27,13 +27,13 @@ export async function testGraphql(
 export async function testGraphqlOK<T = any>(
   query: string,
   variables: any,
-  expectedData: any
-): Promise<T> {
+  expectedData: T
+): Promise<{ data: T }> {
   return (await testGraphql({ query, variables }, 200, {
     ok: true,
     errors: [],
     data: expectedData,
-  })) as T
+  })) as { data: T }
 }
 
 export const ctx: ExecutionContext = {

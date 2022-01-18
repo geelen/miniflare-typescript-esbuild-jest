@@ -2,7 +2,11 @@ import { testGraphqlOK } from './utils'
 import { PostInput, UserInput } from '@/types'
 
 export async function createUser(user: UserInput) {
-  const response = await testGraphqlOK(
+  const response = await testGraphqlOK<{
+    createUser: {
+      id: string
+    }
+  }>(
     `
       mutation CreateUser($input: CreateUserInput!) {
         createUser(input: $input) {
@@ -247,15 +251,15 @@ describe('new User & Post', () => {
       {
         slug: '1-which-cat-is-best',
         input: {
-          authorId: userId
+          authorId: userId,
         },
       },
       {
         updatePostBySlug: {
           title: 'Which Cat is Best?',
           author: {
-            id: userId
-          }
+            id: userId,
+          },
         },
       }
     )
@@ -276,7 +280,7 @@ describe('new User & Post', () => {
         getPostBySlug: {
           title: 'Which Cat is Best?',
           author: {
-            username: 'mr-post'
+            username: 'mr-post',
           },
         },
       }
