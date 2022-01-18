@@ -18,6 +18,7 @@ export const schema = `
     slug: String!
     title: String
     body: String
+    authorId: ID
   }
   
   type Post {

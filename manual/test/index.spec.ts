@@ -15,7 +15,7 @@ describe('single User', () => {
         query {
           getUserByUsername(username: "glen") {
             email
-            # createdAt
+            createdAt
           }
         }
       `},
@@ -26,7 +26,7 @@ describe('single User', () => {
         data: {
           getUserByUsername: {
             email: 'glen@glen.com',
-            // createdAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/)
+            createdAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/)
           },
         },
       }
@@ -70,7 +70,7 @@ describe('single Post', () => {
       { slug: '1-best-cats' },
       {
         title: 'Best Cats',
-        author: userId,
+        authorId: userId,
         body: `# The World's Best Cats\n\n* Principles\n* Whitney`,
       }
     )
@@ -175,7 +175,7 @@ describe('User with Posts', () => {
       { slug: '1-best-cats' },
       {
         title: 'Best Cats',
-        author: userId,
+        authorId: userId,
         body: `# The World's Best Cats\n\n* Principles\n* Whitney`,
       }
     )
@@ -184,7 +184,7 @@ describe('User with Posts', () => {
       { slug: '2-also-good-animals' },
       {
         title: 'Animals That Are Also Good',
-        author: userId,
+        authorId: userId,
         body: `# Animals That Are Also Good\n\n* Stevie\n* Buster`,
       }
     )
@@ -193,12 +193,12 @@ describe('User with Posts', () => {
       { slug: '3-biggest-cat' },
       {
         title: 'Biggest Cat',
-        author: userId,
+        authorId: userId,
         body: `# Biggest Cat?\n\n* Principles!`,
       }
     )
     await updateObject('HOLODB_USER', userId, {
-      posts: [post1, post2, post3],
+      postsIds: [post1, post2, post3],
     })
   })
 

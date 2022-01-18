@@ -1,5 +1,5 @@
 import { FieldNode, Kind, SelectionNode } from 'graphql'
-import { fetchSubquery } from '@/utils'
+import { fetchSubquery, jsonResponse } from '@/utils'
 import { CreateBody } from '@/types'
 
 const isFieldNode = (field: SelectionNode): field is FieldNode =>
@@ -30,17 +30,22 @@ export function CreateModel(
     }
 
     async subquery(selection: ReadonlyArray<SelectionNode>) {
+      const { storage } = this.state
+
+      // Never allow an un-created Object to be queried
+      if (await storage.get('id') === undefined) return jsonResponse({})
+
       const subqueryResponse: any = {}
       await Promise.all(
         selection.map(async (field) => {
           if (isFieldNode(field)) {
             const fieldName = field.name.value
             if (PRIMITIVE_FIELDS[fieldName]) {
-              subqueryResponse[fieldName] = await this.state.storage.get(fieldName)
+              subqueryResponse[fieldName] = await storage.get(fieldName)
             } else if (SINGLE_REF_FIELDS[fieldName]) {
               if (field.selectionSet) {
                 const NAMESPACE = this.env[SINGLE_REF_FIELDS[fieldName]]
-                const refId = (await this.state.storage.get(fieldName)) as string
+                const refId = (await storage.get(fieldName+'Id')) as string
                 subqueryResponse[fieldName] = await fetchSubquery(
                   NAMESPACE,
                   refId,
@@ -55,7 +60,7 @@ export function CreateModel(
               if (field.selectionSet) {
                 const NAMESPACE = this.env[COLLECTION_REF_FIELDS[fieldName]]
                 const fields = field.selectionSet.selections
-                const refs = (await this.state.storage.get(fieldName)) as string[]
+                const refs = (await storage.get(fieldName+'Ids')) as string[]
                 subqueryResponse[fieldName] = await Promise.all(
                   refs.map(async (refId) => {
                     return await fetchSubquery(NAMESPACE, refId, fields)
@@ -77,17 +82,19 @@ export function CreateModel(
           }
         })
       )
-      return new Response(JSON.stringify(subqueryResponse), {
-        headers: {
-          'content-type': 'application/json',
-        },
-      })
+      return jsonResponse(subqueryResponse)
     }
 
     async createFrom({ id, payload, subquery }: CreateBody) {
       const { storage } = this.state
+
+      // Only allow an Object to be created once
+      if (await storage.get('id') !== undefined) return jsonResponse({})
       storage.put('id', id)
-      storage.put('createdAt', new Date().toJSON())
+
+      const now = new Date().toJSON()
+      storage.put('createdAt', now)
+      storage.put('updatedAt', now)
       for (const [k, v] of Object.entries(payload)) {
         storage.put(k, v)
       }

@@ -8,11 +8,13 @@ export async function handleGraphqlQuery(request: Request, env: Bindings) {
     resolvers: {
       Query: {
         getUserById: getById(env.HOLODB_USER),
-        getUserByUsername: getBySurrogateKey(env.HOLODB_USER),
-        getPostBySlug: getBySurrogateKey(env.HOLODB_POST),
+        getUserByUsername: getBySurrogateKey(env.HOLODB_USER, 'username'),
+        getPostById: getById(env.HOLODB_POST),
+        getPostBySlug: getBySurrogateKey(env.HOLODB_POST, 'slug'),
       },
       Mutation: {
         createUser: createWithSurrogateKey(env.HOLODB_USER, 'username'),
+        createPost: createWithSurrogateKey(env.HOLODB_POST, 'slug'),
       },
     },
   })
