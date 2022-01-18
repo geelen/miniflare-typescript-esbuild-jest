@@ -1,4 +1,5 @@
 import { createObject, ctx, testGraphql, testGraphqlOK, updateObject } from './utils'
+import { query } from '../schema.tql'
 
 describe('single User', () => {
   beforeEach(async () => {

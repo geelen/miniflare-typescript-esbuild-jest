@@ -1,4 +1,5 @@
-import { createObject, testGraphql, testGraphqlOK } from './utils'
+import { createObject, testTqlOK } from './utils'
+import { query } from '../schema.tql'
 
 describe('single User', () => {
   beforeEach(async () => {
@@ -10,21 +11,10 @@ describe('single User', () => {
   })
 
   test('single field', async () => {
-    await testGraphqlOK<{
-      getUserByUsername: {
-        email?: string
-        avatar?: string
-      }
-    }>(
-      `
-        query($username: String!) {
-          getUserByUsername(username: $username) {
-            email
-            avatar
-          }
-        }
-      `,
-      { username: 'glen' },
+    await testTqlOK(
+      query('', (t) => [
+        t.getUserByUsername({ username: 'glen' }, (t) => [t.email(), t.avatar()]),
+      ]),
       {
         getUserByUsername: {
           email: 'glen@glen.com',
