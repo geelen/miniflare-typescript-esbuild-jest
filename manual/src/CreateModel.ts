@@ -53,15 +53,17 @@ export function CreateModel(
                 const fields = field.selectionSet.selections
                 const refId = (await storage.get(fieldName + 'Id')) as string
                 // Special case when only requesting { id } from the reference
-                if (onlyFetchingId(fields)) {
-                  subqueryResponse[fieldName] = { id: refId }
-                } else if (refId !== undefined) {
-                  const NAMESPACE = this.env[SINGLE_REF_FIELDS[fieldName]]
-                  subqueryResponse[fieldName] = await fetchSubquery(
-                    NAMESPACE,
-                    refId,
-                    fields
-                  )
+                if (refId !== undefined) {
+                  if (onlyFetchingId(fields)) {
+                    subqueryResponse[fieldName] = { id: refId }
+                  } else {
+                    const NAMESPACE = this.env[SINGLE_REF_FIELDS[fieldName]]
+                    subqueryResponse[fieldName] = await fetchSubquery(
+                      NAMESPACE,
+                      refId,
+                      fields
+                    )
+                  }
                 }
               } else {
                 console.log(
@@ -71,7 +73,7 @@ export function CreateModel(
             } else if (COLLECTION_REF_FIELDS[fieldName]) {
               if (field.selectionSet) {
                 const fields = field.selectionSet.selections
-                const refs = (await storage.get(fieldName + 'Ids') || []) as string[]
+                const refs = ((await storage.get(fieldName + 'Ids')) || []) as string[]
                 // Special case when only requesting { id } from the reference
                 if (onlyFetchingId(fields)) {
                   subqueryResponse[fieldName] = refs.map((ref) => ({ id: ref }))

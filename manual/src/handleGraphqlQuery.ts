@@ -1,6 +1,6 @@
 import { ApolloServerBase } from 'apollo-server-core'
 import { schema } from '@/constants'
-import { getBySurrogateKey, createWithSurrogateKey, getById, updateById } from '@/utils'
+import { getBySurrogateKey, createWithSurrogateKey, getById, updateById, updateBySurrogateKey } from '@/utils'
 
 export async function handleGraphqlQuery(request: Request, env: Bindings) {
   const server = new ApolloServerBase({
@@ -15,7 +15,10 @@ export async function handleGraphqlQuery(request: Request, env: Bindings) {
       Mutation: {
         createUser: createWithSurrogateKey(env.HOLODB_USER, 'username'),
         updateUserById: updateById(env.HOLODB_USER),
+        updateUserByUsername: updateBySurrogateKey(env.HOLODB_USER, 'username'),
         createPost: createWithSurrogateKey(env.HOLODB_POST, 'slug'),
+        updatePostById: updateById(env.HOLODB_POST),
+        updatePostBySlug: updateBySurrogateKey(env.HOLODB_POST, 'slug'),
       },
     },
   })

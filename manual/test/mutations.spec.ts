@@ -134,6 +134,18 @@ describe('new User & Post', () => {
         },
       }
     )
+  })
+
+  test('updating IDs', async () => {
+    const userId = await createUser({
+      username: 'mr-post',
+      email: 'graphql@created.com',
+    })
+    const postId = await createPost({
+      body: `Which cat is best? My cat.`,
+      slug: `1-which-cat-is-best`,
+      title: `Which Cat is Best?`,
+    })
 
     // Expecting no posts yet, since we haven't updated!
     const getUserPosts = `
@@ -190,10 +202,82 @@ describe('new User & Post', () => {
       {
         getUserById: {
           username: 'mr-post',
-          posts: [{
-            id: postId,
-            slug: '1-which-cat-is-best'
-          }],
+          posts: [
+            {
+              id: postId,
+              slug: '1-which-cat-is-best',
+            },
+          ],
+        },
+      }
+    )
+
+    // Likewise, we haven't set the Author on the Post
+    await testGraphqlOK(
+      `
+        query($slug: String!) {
+          getPostBySlug(slug: $slug) {
+            title
+            author {
+              username
+            }
+          }
+        }
+      `,
+      { slug: '1-which-cat-is-best' },
+      {
+        getPostBySlug: {
+          title: 'Which Cat is Best?',
+          author: '<null>', // Had to hack null to '<null>' in the comparator, Jest is weird.
+        },
+      }
+    )
+
+    await testGraphqlOK(
+      `
+        mutation($slug: String!, $input: UpdatePostInput!) {
+          updatePostBySlug(slug: $slug, input: $input) {
+            title
+            author {
+              id
+            }
+          }
+        }
+      `,
+      {
+        slug: '1-which-cat-is-best',
+        input: {
+          authorId: userId
+        },
+      },
+      {
+        updatePostBySlug: {
+          title: 'Which Cat is Best?',
+          author: {
+            id: userId
+          }
+        },
+      }
+    )
+
+    await testGraphqlOK(
+      `
+        query($slug: String!) {
+          getPostBySlug(slug: $slug) {
+            title
+            author {
+              username
+            }
+          }
+        }
+      `,
+      { slug: '1-which-cat-is-best' },
+      {
+        getPostBySlug: {
+          title: 'Which Cat is Best?',
+          author: {
+            username: 'mr-post'
+          },
         },
       }
     )
