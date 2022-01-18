@@ -24,12 +24,16 @@ export async function testGraphql(
   return json as any
 }
 
-export async function testGraphqlOK(query: string, variables: any, expectedData: any) {
-  return await testGraphql({ query, variables }, 200, {
+export async function testGraphqlOK<T = any>(
+  query: string,
+  variables: any,
+  expectedData: any
+): Promise<T> {
+  return (await testGraphql({ query, variables }, 200, {
     ok: true,
     errors: [],
     data: expectedData,
-  })
+  })) as T
 }
 
 export const ctx: ExecutionContext = {
@@ -73,4 +77,3 @@ export async function updateObject(
   }
   return ref.toString()
 }
-
