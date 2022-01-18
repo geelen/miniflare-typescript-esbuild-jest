@@ -1,4 +1,4 @@
-import { createObject, ctx, testGraphql, updateObject } from './utils'
+import { createObject, ctx, testGraphql, testGraphqlOK, updateObject } from './utils'
 
 describe('single User', () => {
   beforeEach(async () => {
@@ -11,14 +11,16 @@ describe('single User', () => {
 
   test('single field', async () => {
     await testGraphql(
-      {query: `
+      {
+        query: `
         query {
           getUserByUsername(username: "glen") {
             email
             createdAt
           }
         }
-      `},
+      `,
+      },
       200,
       {
         ok: true,
@@ -26,7 +28,9 @@ describe('single User', () => {
         data: {
           getUserByUsername: {
             email: 'glen@glen.com',
-            createdAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/)
+            createdAt: expect.stringMatching(
+              /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/
+            ),
           },
         },
       }
@@ -225,10 +229,78 @@ describe('User with Posts', () => {
             email: 'glen@glen.com',
             avatar: 'https://www.fillmurray.com/200/200',
             posts: [
-              {title:'Best Cats', slug:'1-best-cats'},
-              {title:'Animals That Are Also Good', slug:'2-also-good-animals'},
-              {title:'Biggest Cat', slug:'3-biggest-cat'},
-            ]
+              { title: 'Best Cats', slug: '1-best-cats' },
+              { title: 'Animals That Are Also Good', slug: '2-also-good-animals' },
+              { title: 'Biggest Cat', slug: '3-biggest-cat' },
+            ],
+          },
+        },
+      }
+    )
+  })
+})
+
+describe.only('Edge cases', () => {
+  it(`Shouldn't crawl collection if only fetching IDs`, async () => {
+    const userId = await createObject(
+      'HOLODB_USER',
+      { username: 'glen' },
+      {
+        email: 'glen@glen.com',
+        avatar: 'https://www.fillmurray.com/200/200',
+        postsIds: ['no-existo1', 'no-existo2', 'no-existo3'],
+      }
+    )
+
+    await testGraphqlOK(
+      `
+        query($id: ID!) {
+          getUserById(id: $id) {
+            username
+            posts {
+              id
+            }
+          }
+        }
+      `,
+      { id: userId },
+      {
+        getUserById: {
+          username: `glen`,
+          posts: [{ id: 'no-existo1' }, { id: 'no-existo2' }, { id: 'no-existo3' }],
+        },
+      }
+    )
+  })
+
+  it(`Shouldn't crawl ref if only fetching ID`, async () => {
+    const postId = await createObject(
+      'HOLODB_POST',
+      { slug: '1-best-cats' },
+      {
+        title: 'Best Cats',
+        authorId: `this-user-doesnt-exist`,
+        body: `# The World's Best Cats\n\n* Principles\n* Whitney`,
+      }
+    )
+
+    await testGraphqlOK(
+      `
+        query($id: ID!) {
+          getPostById(id: $id) {
+            slug
+            author {
+              id
+            }
+          }
+        }
+      `,
+      { id: postId },
+      {
+        getPostById: {
+          slug: `1-best-cats`,
+          author: {
+            id: `this-user-doesnt-exist`,
           },
         },
       }

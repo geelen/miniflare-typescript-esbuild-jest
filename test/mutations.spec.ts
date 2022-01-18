@@ -84,7 +84,7 @@ describe('new User', () => {
   })
 })
 
-describe('new User & Post', () => {
+describe.skip('new User & Post', () => {
   test('create & retrieve', async () => {
     const userId = await createUser({
       username: 'mr-post',
@@ -127,6 +127,50 @@ describe('new User & Post', () => {
       {},
       {
         getPostById: {
+          title: `Which Cat is Best?`,
+          author: {
+            username: 'mr-post'
+          }
+        },
+      }
+    )
+    await testGraphqlOK(
+      `
+        query {
+          getUserById(id: "${userId}") {
+            username
+            posts {
+              id
+              slug
+            }
+          }
+        }
+      `,
+      {},
+      {
+        getPostById: {
+          title: `Which Cat is Best?`,
+          author: {
+            username: 'mr-post'
+          }
+        },
+      }
+    )
+
+    await testGraphqlOK(
+      `
+        mutation {
+          updateUserById(id: "${userId}") {
+            title
+            author {
+              username
+            }
+          }
+        }
+      `,
+      {},
+      {
+        updateUserById: {
           title: `Which Cat is Best?`,
           author: {
             username: 'mr-post'
