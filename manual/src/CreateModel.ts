@@ -5,6 +5,11 @@ import { CreateBody } from '@/types'
 const isFieldNode = (field: SelectionNode): field is FieldNode =>
   field.kind === Kind.FIELD
 
+function onlyFetchingId(fields: ReadonlyArray<SelectionNode>) {
+  if (fields.length !== 1) return false
+  return isFieldNode(fields[0]) && fields[0].name.value === 'id'
+}
+
 export function CreateModel(
   PRIMITIVE_FIELDS: { [k: string]: string },
   SINGLE_REF_FIELDS: { [k: string]: keyof Bindings },
@@ -15,8 +20,7 @@ export function CreateModel(
     constructor(
       private readonly state: DurableObjectState,
       private readonly env: Bindings
-    ) {
-    }
+    ) {}
 
     async fetch(request: Request) {
       const { pathname } = new URL(request.url)
@@ -33,7 +37,7 @@ export function CreateModel(
       const { storage } = this.state
 
       // Never allow an un-created Object to be queried
-      if (await storage.get('id') === undefined) return jsonResponse({})
+      if ((await storage.get('id')) === undefined) return jsonResponse({})
 
       const subqueryResponse: any = {}
       await Promise.all(
@@ -44,13 +48,19 @@ export function CreateModel(
               subqueryResponse[fieldName] = await storage.get(fieldName)
             } else if (SINGLE_REF_FIELDS[fieldName]) {
               if (field.selectionSet) {
-                const NAMESPACE = this.env[SINGLE_REF_FIELDS[fieldName]]
-                const refId = (await storage.get(fieldName+'Id')) as string
-                subqueryResponse[fieldName] = await fetchSubquery(
-                  NAMESPACE,
-                  refId,
-                  field.selectionSet.selections
-                )
+                const fields = field.selectionSet.selections
+                const refId = (await storage.get(fieldName + 'Id')) as string
+                // Special case when only requesting { id } from the reference
+                if (onlyFetchingId(fields)) {
+                  subqueryResponse[fieldName] = { id: refId }
+                } else {
+                  const NAMESPACE = this.env[SINGLE_REF_FIELDS[fieldName]]
+                  subqueryResponse[fieldName] = await fetchSubquery(
+                    NAMESPACE,
+                    refId,
+                    fields
+                  )
+                }
               } else {
                 console.log(
                   `Query requested reference to '${fieldName}' but didn't specify any selection fields!`
@@ -58,14 +68,19 @@ export function CreateModel(
               }
             } else if (COLLECTION_REF_FIELDS[fieldName]) {
               if (field.selectionSet) {
-                const NAMESPACE = this.env[COLLECTION_REF_FIELDS[fieldName]]
                 const fields = field.selectionSet.selections
-                const refs = (await storage.get(fieldName+'Ids')) as string[]
-                subqueryResponse[fieldName] = await Promise.all(
-                  refs.map(async (refId) => {
-                    return await fetchSubquery(NAMESPACE, refId, fields)
-                  })
-                )
+                const refs = (await storage.get(fieldName + 'Ids')) as string[]
+                // Special case when only requesting { id } from the reference
+                if (onlyFetchingId(fields)) {
+                  subqueryResponse[fieldName] = refs.map((ref) => ({ id: ref }))
+                } else {
+                  const NAMESPACE = this.env[COLLECTION_REF_FIELDS[fieldName]]
+                  subqueryResponse[fieldName] = await Promise.all(
+                    refs.map(async (refId) => {
+                      return await fetchSubquery(NAMESPACE, refId, fields)
+                    })
+                  )
+                }
               } else {
                 console.log(
                   `Query requested reference to '${fieldName}' but didn't specify any selection fields!`
@@ -89,7 +104,7 @@ export function CreateModel(
       const { storage } = this.state
 
       // Only allow an Object to be created once
-      if (await storage.get('id') !== undefined) return jsonResponse({})
+      if ((await storage.get('id')) !== undefined) return jsonResponse({})
       storage.put('id', id)
 
       const now = new Date().toJSON()
