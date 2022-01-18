@@ -10,7 +10,12 @@ describe('single User', () => {
   })
 
   test('single field', async () => {
-    await testGraphqlOK(
+    await testGraphqlOK<{
+      getUserByUsername: {
+        email?: string
+        avatar?: string
+      }
+    }>(
       `
         query($username: String!) {
           getUserByUsername(username: $username) {
