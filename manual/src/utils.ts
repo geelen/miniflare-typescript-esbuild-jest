@@ -66,7 +66,6 @@ export const createWithSurrogateKey = (
   const input = args.input
   const id = NAMESPACE.idFromName(input[keyName])
   const stub = NAMESPACE.get(id)
-  console.log({ input })
 
   const body: CreateBody = {
     id: id.toString(),
@@ -111,7 +110,6 @@ export const updateBySurrogateKey = (
 
 async function doUpdate(stub: DurableObjectStub, info: GraphQLResolveInfo, input: any) {
   const subQueryNodes = info.fieldNodes[0].selectionSet!.selections
-  console.log({ input })
 
   const body: UpdateBody = {
     payload: input,

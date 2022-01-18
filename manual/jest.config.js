@@ -12,5 +12,6 @@ export default {
   },
   testEnvironment: 'miniflare',
   // Src files are watched by esbuild
-  watchPathIgnorePatterns: ['<rootDir>/src']
+  watchPathIgnorePatterns: ['<rootDir>/src'],
+  verbose: true,
 }
