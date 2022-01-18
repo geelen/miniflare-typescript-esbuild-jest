@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@esbuild-plugins/node-modules-polyfill": "^0.1.4",
+    "@timkendall/tql": "^0.8.0",
     "@types/js-yaml": "^4.0.5",
     "apollo-server-core": "^3.6.1",
     "chokidar-cli": "^3.0.0",

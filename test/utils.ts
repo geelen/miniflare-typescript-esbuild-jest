@@ -1,6 +1,7 @@
 import worker from '@/index'
 // @ts-ignore
 import mapValuesDeep from 'map-values-deep'
+import { Operation, Selection, SelectionSet } from '@timkendall/tql'
 
 export async function testGraphql(
   query: string | { query: string; variables?: any },
@@ -34,6 +35,17 @@ export async function testGraphqlOK<T = any>(
     errors: [],
     data: expectedData,
   })) as { data: T }
+}
+
+export async function testTqlOK<T extends Array<Selection>, inherR>(
+  query: Operation<SelectionSet<T>>,
+  expectedData: any
+): Promise<{ data: any }> {
+  return (await testGraphql({ query: query.toString(), variables: {} }, 200, {
+    ok: true,
+    errors: [],
+    data: expectedData,
+  })) as { data: any }
 }
 
 export const ctx: ExecutionContext = {
