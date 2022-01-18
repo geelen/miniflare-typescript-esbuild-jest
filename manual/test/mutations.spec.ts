@@ -4,7 +4,7 @@ import { PostInput, UserInput } from '@/types'
 export async function createUser(user: UserInput) {
   const response = await testGraphqlOK(
     `
-      mutation CreateUser($input: UserInput) {
+      mutation CreateUser($input: CreateUserInput!) {
         createUser(input: $input) {
           id
         }
@@ -25,7 +25,7 @@ export async function createUser(user: UserInput) {
 export async function createPost(post: PostInput) {
   const response = await testGraphqlOK(
     `
-      mutation CreatePost($input: PostInput) {
+      mutation CreatePost($input: CreatePostInput!) {
         createPost(input: $input) {
           id
         }
@@ -84,7 +84,7 @@ describe('new User', () => {
   })
 })
 
-describe.skip('new User & Post', () => {
+describe('new User & Post', () => {
   test('create & retrieve', async () => {
     const userId = await createUser({
       username: 'mr-post',
@@ -94,7 +94,7 @@ describe.skip('new User & Post', () => {
       authorId: userId,
       body: `Which cat is best? My cat.`,
       slug: `1-which-cat-is-best`,
-      title: `Which Cat is Best?`
+      title: `Which Cat is Best?`,
     })
 
     await testGraphqlOK(
@@ -129,52 +129,71 @@ describe.skip('new User & Post', () => {
         getPostById: {
           title: `Which Cat is Best?`,
           author: {
-            username: 'mr-post'
-          }
+            username: 'mr-post',
+          },
         },
       }
     )
-    await testGraphqlOK(
-      `
-        query {
-          getUserById(id: "${userId}") {
-            username
-            posts {
-              id
-              slug
-            }
+
+    // Expecting no posts yet, since we haven't updated!
+    const getUserPosts = `
+      query($id: ID!) {
+        getUserById(id: $id) {
+          username
+          posts {
+            id
+            slug
           }
         }
-      `,
-      {},
+      }
+    `
+    await testGraphqlOK(
+      getUserPosts,
+      { id: userId },
       {
-        getPostById: {
-          title: `Which Cat is Best?`,
-          author: {
-            username: 'mr-post'
-          }
+        getUserById: {
+          username: 'mr-post',
+          posts: [],
         },
       }
     )
 
     await testGraphqlOK(
       `
-        mutation {
-          updateUserById(id: "${userId}") {
-            title
-            author {
-              username
+        mutation($id: ID!, $input: UpdateUserInput!) {
+          updateUserById(id: $id, input: $input) {
+            username
+            posts {
+              id
             }
           }
         }
       `,
-      {},
+      {
+        id: userId,
+        input: {
+          postsIds: [postId],
+        },
+      },
       {
         updateUserById: {
-          title: `Which Cat is Best?`,
-          author: {
-            username: 'mr-post'
-          }
+          username: 'mr-post',
+          posts: [{ id: postId }],
+        },
+      }
+    )
+
+    // Now we should see posts!
+    await testGraphqlOK(
+      getUserPosts,
+      { id: userId },
+      {
+        getUserById: {
+          username: 'mr-post',
+          posts: [{
+            id: postId,
+            slug: '1-which-cat-is-best'
+          }],
         },
       }
     )

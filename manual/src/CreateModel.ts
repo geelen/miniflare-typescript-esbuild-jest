@@ -1,6 +1,6 @@
 import { FieldNode, Kind, SelectionNode } from 'graphql'
 import { fetchSubquery, jsonResponse } from '@/utils'
-import { CreateBody } from '@/types'
+import { CreateBody, UpdateBody } from '@/types'
 
 const isFieldNode = (field: SelectionNode): field is FieldNode =>
   field.kind === Kind.FIELD
@@ -28,6 +28,8 @@ export function CreateModel(
         return await this.subquery((await request.json()) as ReadonlyArray<SelectionNode>)
       } else if (pathname === '/create' && request.method === 'POST') {
         return await this.createFrom((await request.json()) as CreateBody)
+      } else if (pathname === '/update' && request.method === 'POST') {
+        return await this.updateFrom((await request.json()) as UpdateBody)
       } else {
         return new Response('Not found', { status: 404 })
       }
@@ -53,7 +55,7 @@ export function CreateModel(
                 // Special case when only requesting { id } from the reference
                 if (onlyFetchingId(fields)) {
                   subqueryResponse[fieldName] = { id: refId }
-                } else {
+                } else if (refId !== undefined) {
                   const NAMESPACE = this.env[SINGLE_REF_FIELDS[fieldName]]
                   subqueryResponse[fieldName] = await fetchSubquery(
                     NAMESPACE,
@@ -69,7 +71,7 @@ export function CreateModel(
             } else if (COLLECTION_REF_FIELDS[fieldName]) {
               if (field.selectionSet) {
                 const fields = field.selectionSet.selections
-                const refs = (await storage.get(fieldName + 'Ids')) as string[]
+                const refs = (await storage.get(fieldName + 'Ids') || []) as string[]
                 // Special case when only requesting { id } from the reference
                 if (onlyFetchingId(fields)) {
                   subqueryResponse[fieldName] = refs.map((ref) => ({ id: ref }))
@@ -110,6 +112,20 @@ export function CreateModel(
       const now = new Date().toJSON()
       storage.put('createdAt', now)
       storage.put('updatedAt', now)
+      for (const [k, v] of Object.entries(payload)) {
+        storage.put(k, v)
+      }
+
+      return this.subquery(subquery)
+    }
+
+    async updateFrom({ payload, subquery }: UpdateBody) {
+      const { storage } = this.state
+
+      // Only allow updates on Objects that have been created
+      if ((await storage.get('id')) === undefined) return jsonResponse({})
+
+      storage.put('updatedAt', new Date().toJSON())
       for (const [k, v] of Object.entries(payload)) {
         storage.put(k, v)
       }

@@ -1,21 +1,35 @@
 export const schema = `
-  input UserInput {
+  input UpdateUserInput {
+    email: String
+    avatar: String
+    postsIds: [ID]
+  }
+  
+  input CreateUserInput {
     username: String!
     email: String
     avatar: String
+    postsIds: [ID]
   }
   
   type User {
     id: ID!
     createdAt: String!
+    updatedAt: String!
     username: String!
     email: String
     avatar: String
     posts: [Post]
   }
   
-  input PostInput {
+  input CreatePostInput {
     slug: String!
+    title: String
+    body: String
+    authorId: ID
+  }
+  
+  input UpdatePostInput {
     title: String
     body: String
     authorId: ID
@@ -24,6 +38,7 @@ export const schema = `
   type Post {
     id: ID!
     createdAt: String!
+    updatedAt: String!
     slug: String!
     title: String
     body: String
@@ -38,9 +53,12 @@ export const schema = `
   }
   
   type Mutation {
-    createUser(input: UserInput): User
-    updateUser(input: UserInput): User
-    createPost(input: PostInput): Post
-    updatePost(input: PostInput): Post
+    createUser(input: CreateUserInput!): User
+    updateUserByUsername(username: String!, input: UpdateUserInput!): User
+    updateUserById(id: ID!, input: UpdateUserInput!): User
+  
+    createPost(input: CreatePostInput!): Post
+    updatePostById(id: ID!, input: UpdatePostInput!): Post
+    updatePostBySlug(slug: String!, input: UpdatePostInput!): Post
   }
 `
