@@ -1,5 +1,5 @@
 import { GraphQLResolveInfo, SelectionNode } from 'graphql'
-import { CreateBody } from '@/types'
+import { CreateBody, UpdateBody } from '@/types'
 
 export async function fetchSubquery(
   NAMESPACE: DurableObjectNamespace,
@@ -37,6 +37,32 @@ export const getById =
     return await response.json()
   }
 
+export const updateById =
+  (NAMESPACE: DurableObjectNamespace) =>
+  async (
+    parent: any,
+    args: { id: string, input: any },
+    ctx: any,
+    info: GraphQLResolveInfo
+  ) => {
+    const { id, input } = args
+    const ref = NAMESPACE.idFromString(id)
+    const stub = NAMESPACE.get(ref)
+
+    const subQueryNodes = info.fieldNodes[0].selectionSet!.selections
+    console.log({input})
+
+    const body: UpdateBody = {
+      payload: input,
+      subquery: subQueryNodes,
+    }
+    const response = await stub.fetch('https://holo.db/update', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
+    return await response.json()
+  }
+
 export const getBySurrogateKey =
   (NAMESPACE: DurableObjectNamespace, keyName: string) =>
   async (
@@ -59,6 +85,28 @@ export const getBySurrogateKey =
   }
 
 export const createWithSurrogateKey =
+  (NAMESPACE: DurableObjectNamespace, key: string) =>
+  async (parent: any, args: { input: any }, ctx: any, info: GraphQLResolveInfo) => {
+    const subQueryNodes = info.fieldNodes[0].selectionSet!.selections
+
+    const input = args.input
+    const id = NAMESPACE.idFromName(input[key])
+    const stub = NAMESPACE.get(id)
+    console.log({input})
+
+    const body: CreateBody = {
+      id: id.toString(),
+      payload: input,
+      subquery: subQueryNodes,
+    }
+    const response = await stub.fetch('https://holo.db/create', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
+    return await response.json()
+  }
+
+export const updateWithSurrogateKey =
   (NAMESPACE: DurableObjectNamespace, key: string) =>
   async (parent: any, args: { input: any }, ctx: any, info: GraphQLResolveInfo) => {
     const subQueryNodes = info.fieldNodes[0].selectionSet!.selections

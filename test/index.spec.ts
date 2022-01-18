@@ -240,7 +240,7 @@ describe('User with Posts', () => {
   })
 })
 
-describe.only('Edge cases', () => {
+describe('Edge cases', () => {
   it(`Shouldn't crawl collection if only fetching IDs`, async () => {
     const userId = await createObject(
       'HOLODB_USER',

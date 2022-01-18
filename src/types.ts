@@ -6,6 +6,11 @@ export type CreateBody = {
   subquery: ReadonlyArray<SelectionNode>
 }
 
+export type UpdateBody = {
+  payload: { [k:string]: any }
+  subquery: ReadonlyArray<SelectionNode>
+}
+
 // Needs to be generated
 export type UserInput = {
   username: string
