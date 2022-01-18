@@ -5,3 +5,17 @@ export type CreateBody = {
   payload: { [k:string]: any }
   subquery: ReadonlyArray<SelectionNode>
 }
+
+// Needs to be generated
+export type UserInput = {
+  username: string
+  email?: string
+  avatar?: string
+}
+
+export type PostInput = {
+  slug: string
+  title?: string
+  body?: string
+  authorId?: string
+}

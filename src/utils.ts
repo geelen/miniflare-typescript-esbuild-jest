@@ -24,7 +24,7 @@ export const getById =
     ctx: any,
     info: GraphQLResolveInfo
   ) => {
-    const id = Object.values(args)[0]
+    const id = args.id
     const ref = NAMESPACE.idFromString(id)
     const stub = NAMESPACE.get(ref)
 
@@ -38,14 +38,14 @@ export const getById =
   }
 
 export const getBySurrogateKey =
-  (NAMESPACE: DurableObjectNamespace) =>
+  (NAMESPACE: DurableObjectNamespace, keyName: string) =>
   async (
     parent: any,
     args: { [k: string]: string },
     ctx: any,
     info: GraphQLResolveInfo
   ) => {
-    const key = Object.values(args)[0]
+    const key = args[keyName]
     const subQueryNodes = info.fieldNodes[0].selectionSet!.selections
 
     const id = NAMESPACE.idFromName(key)
@@ -66,6 +66,7 @@ export const createWithSurrogateKey =
     const input = args.input
     const id = NAMESPACE.idFromName(input[key])
     const stub = NAMESPACE.get(id)
+    console.log({input})
 
     const body: CreateBody = {
       id: id.toString(),
@@ -78,3 +79,13 @@ export const createWithSurrogateKey =
     })
     return await response.json()
   }
+
+export const jsonResponse = (data: any, init?: ResponseInit) => {
+  return new Response(JSON.stringify(data), {
+    ...init,
+    headers: {
+      'content-type': 'application/json',
+      ...init?.headers
+    },
+  })
+}

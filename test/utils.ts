@@ -12,16 +12,24 @@ export async function testGraphql(
     method: 'POST',
     body: JSON.stringify(typeof query === 'string' ? { query } : query),
     headers: {
-      'content-type': 'application/json'
-    }
+      'content-type': 'application/json',
+    },
   })
   const res = await worker.fetch(req, env, ctx)
-  const json = await res.json();
+  const json = await res.json()
   expect([
     res.status,
     mapValuesDeep(json, (x: any) => (x === null ? '<null>' : x)),
   ]).toStrictEqual([status, expected])
   return json as any
+}
+
+export async function testGraphqlOK(query: string, variables: any, expectedData: any) {
+  return await testGraphql({ query, variables }, 200, {
+    ok: true,
+    errors: [],
+    data: expectedData,
+  })
 }
 
 export const ctx: ExecutionContext = {
@@ -38,6 +46,13 @@ export async function createObject(
   const [keyField, key] = Object.entries(surrogate)[0]
   const ref = env[namespace].idFromName(key)
   const storage = await getMiniflareDurableObjectStorage(ref)
+
+  // Set created fields
+  await storage.put('id', ref.toString())
+  const now = new Date().toJSON()
+  await storage.put('createdAt', now)
+  await storage.put('updatedAt', now)
+
   await storage.put(keyField, key)
   for (const [k, value] of Object.entries(fields)) {
     await storage.put(k, value)
@@ -58,3 +73,4 @@ export async function updateObject(
   }
   return ref.toString()
 }
+
