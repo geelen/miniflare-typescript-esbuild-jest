@@ -1,6 +1,6 @@
 import { ApolloServerBase } from 'apollo-server-core'
 import { schema } from '@/constants'
-import { getBySurrogateKey, createWithSurrogateKey, getById, updateById, updateBySurrogateKey } from '@/utils'
+import {createWithSurrogateKey, getById, getBySurrogateKey, updateById, updateBySurrogateKey} from "@/resolvers";
 
 export async function handleGraphqlQuery(request: Request, env: Bindings) {
   const server = new ApolloServerBase({
