@@ -1,5 +1,5 @@
 import { FieldNode, Kind, SelectionNode } from 'graphql'
-import { fetchSubquery, jsonResponse } from '@/utils'
+import {fetchSubquery, jsonResponse} from '@/utils'
 import { CreateBody, UpdateBody } from '@/types'
 
 const isFieldNode = (field: SelectionNode): field is FieldNode =>
