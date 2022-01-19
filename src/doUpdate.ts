@@ -1,7 +1,7 @@
-import { DoIdentifier, ResolverContext, UpdateBody } from '@/types'
-import { GraphQLResolveInfo } from 'graphql'
-import { cachedJson } from '@/utils'
-import { getCache } from '@/cache'
+import {DoIdentifier, ResolverContext, UpdateBody, UpdateResponse} from '@/types'
+import {GraphQLResolveInfo} from 'graphql'
+import {cachedJson} from '@/utils'
+import {getCache} from '@/cache'
 
 export async function doUpdate(
   ctx: ResolverContext,
@@ -25,13 +25,13 @@ export async function doUpdate(
     body: JSON.stringify(body),
   })
 
-  const newData = (await response.json()) as Record<string, any>
+  const updateResponse = (await response.json()) as UpdateResponse
   await Promise.all(
-    Object.entries(newData).map(async ([fieldName, result]) => {
+    Object.entries(updateResponse.updates).map(async ([fieldName, result]) => {
       const cacheKey = `${id.toString()}/${fieldName}`
       ctx.cacheTraces.push(`${cacheKey} UPDATE`)
       await cache.put(`https://holo.db/${cacheKey}`, cachedJson(result))
     })
   )
-  return newData
+  return updateResponse.subquery
 }

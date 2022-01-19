@@ -1,7 +1,7 @@
-import {SelectionNode} from 'graphql'
-import {isFieldNode, jsonResponse} from '@/utils'
-import {CreateBody, ResolverContext, UpdateBody} from '@/types'
-import {fetchSubquery} from "@/fetchSubquery";
+import { SelectionNode } from 'graphql'
+import { isFieldNode, jsonResponse } from '@/utils'
+import {CreateBody, ResolverContext, UpdateBody, UpdateResponse} from '@/types'
+import { fetchSubquery } from '@/fetchSubquery'
 
 function onlyFetchingId(fields: ReadonlyArray<SelectionNode>) {
   if (fields.length !== 1) return false
@@ -44,12 +44,22 @@ export function CreateModel(
     }
 
     async subquery(selection: ReadonlyArray<SelectionNode>) {
+      // Never allow an un-created Object to be queried
+      const myId = await this.state.storage.get('id')
+      if (myId === undefined)
+        return jsonResponse(
+          {},
+          {
+            status: 404,
+          }
+        )
+
+      return jsonResponse(await this.doSubquery(selection))
+    }
+
+    private async doSubquery(selection: ReadonlyArray<SelectionNode>) {
       const { storage } = this.state
       const ctx: ResolverContext = { cacheTraces: [] }
-
-      // Never allow an un-created Object to be queried
-      if ((await storage.get('id')) === undefined) return jsonResponse({})
-
       const subqueryResponse: any = {}
       await Promise.all(
         selection.map(async (field) => {
@@ -111,7 +121,7 @@ export function CreateModel(
           }
         })
       )
-      return jsonResponse(subqueryResponse)
+      return subqueryResponse
     }
 
     async createFrom({ id, payload, subquery }: CreateBody) {
@@ -128,7 +138,7 @@ export function CreateModel(
         storage.put(k, v)
       }
 
-      return this.subquery(subquery)
+      return jsonResponse(await this.doSubquery(subquery))
     }
 
     async updateFrom({ payload, subquery }: UpdateBody) {
@@ -137,12 +147,21 @@ export function CreateModel(
       // Only allow updates on Objects that have been created
       if ((await storage.get('id')) === undefined) return jsonResponse({})
 
-      storage.put('updatedAt', new Date().toJSON())
-      for (const [k, v] of Object.entries(payload)) {
+      const updates: Record<string, any> = {
+        'updatedAt': new Date().toJSON(),
+        ...payload
+      }
+
+      for (const [k, v] of Object.entries(updates)) {
         storage.put(k, v)
       }
 
-      return this.subquery(subquery)
+      const response: UpdateResponse = {
+        subquery: await this.doSubquery(subquery),
+        updates,
+        invalidations: []
+      };
+      return jsonResponse(response)
     }
   }
 }
