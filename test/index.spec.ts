@@ -1,8 +1,12 @@
-import { createObject, ctx, testGraphql, testGraphqlOK, updateObject } from './utils'
-
-describe.only('skip all tests', () => {
-  test('x', () => {})
-})
+import {
+  createObject,
+  ctx,
+  testGraphql,
+  testGraphqlOK,
+  testTqlOK,
+  updateObject,
+} from './utils'
+import { query } from '../schema.tql'
 
 describe('single User', () => {
   beforeEach(async () => {
@@ -14,31 +18,25 @@ describe('single User', () => {
   })
 
   test('single field', async () => {
-    await testGraphql(
-      {
-        query: `
-          query {
-            getUserByUsername(username: "glen") {
-              email
-            }
+    await testGraphqlOK(
+      `
+        query {
+          getUserByUsername(username: "glen") {
+            email
           }
-        `,
-      },
-      200,
+        }
+      `,
+      {},
       {
-        ok: true,
-        errors: [],
-        data: {
-          getUserByUsername: {
-            email: 'glen@glen.com',
-          },
+        getUserByUsername: {
+          email: 'glen@glen.com',
         },
       }
     )
   })
 
   test('two fields', async () => {
-    await testGraphql(
+    await testGraphqlOK(
       `
         query {
           getUserByUsername(username: "glen") {
@@ -48,18 +46,14 @@ describe('single User', () => {
           }
         }
       `,
-      200,
+      {},
       {
-        ok: true,
-        errors: [],
-        data: {
-          getUserByUsername: {
-            email: 'glen@glen.com',
-            avatar: 'https://www.fillmurray.com/200/200',
-            createdAt: expect.stringMatching(
-              /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/
-            ),
-          },
+        getUserByUsername: {
+          email: 'glen@glen.com',
+          avatar: 'https://www.fillmurray.com/200/200',
+          createdAt: expect.stringMatching(
+            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/
+          ),
         },
       }
     )
@@ -85,7 +79,7 @@ describe('single Post', () => {
   })
 
   test('single field', async () => {
-    await testGraphql(
+    await testGraphqlOK(
       `
         query {
           getPostBySlug(slug: "1-best-cats") {
@@ -93,41 +87,28 @@ describe('single Post', () => {
           }
         }
       `,
-      200,
+      {},
       {
-        ok: true,
-        errors: [],
-        data: {
-          getPostBySlug: {
-            title: 'Best Cats',
-          },
+        getPostBySlug: {
+          title: 'Best Cats',
         },
       }
     )
   })
 
   test('single ref', async () => {
-    await testGraphql(
-      `
-        query {
-          getPostBySlug(slug: "1-best-cats") {
-            title
-            author {
-              username
-            }
-          }
-        }
-      `,
-      200,
+    await testTqlOK(
+      query('', (t) => [
+        t.getPostBySlug({ slug: '1-best-cats' }, (t) => [
+          t.title(),
+          t.author((t) => [t.username()]),
+        ]),
+      ]),
       {
-        ok: true,
-        errors: [],
-        data: {
-          getPostBySlug: {
-            title: 'Best Cats',
-            author: {
-              username: 'glen',
-            },
+        getPostBySlug: {
+          title: 'Best Cats',
+          author: {
+            username: 'glen',
           },
         },
       }
@@ -135,35 +116,24 @@ describe('single Post', () => {
   })
 
   test('more fields', async () => {
-    await testGraphql(
-      `
-        query {
-          getPostBySlug(slug: "1-best-cats") {
-            title
-            slug
-            body
-            author {
-              username
-              email
-              avatar
-            }
-          }
-        }
-      `,
-      200,
+    await testTqlOK(
+      query('', (t) => [
+        t.getPostBySlug({ slug: '1-best-cats' }, (t) => [
+          t.title(),
+          t.slug(),
+          t.body(),
+          t.author((t) => [t.username(), t.email(), t.avatar()]),
+        ]),
+      ]),
       {
-        ok: true,
-        errors: [],
-        data: {
-          getPostBySlug: {
-            title: 'Best Cats',
-            slug: '1-best-cats',
-            body: `# The World's Best Cats\n\n* Principles\n* Whitney`,
-            author: {
-              username: 'glen',
-              email: 'glen@glen.com',
-              avatar: 'https://www.fillmurray.com/200/200',
-            },
+        getPostBySlug: {
+          title: 'Best Cats',
+          slug: '1-best-cats',
+          body: `# The World's Best Cats\n\n* Principles\n* Whitney`,
+          author: {
+            username: 'glen',
+            email: 'glen@glen.com',
+            avatar: 'https://www.fillmurray.com/200/200',
           },
         },
       }
@@ -211,33 +181,23 @@ describe('User with Posts', () => {
   })
 
   test('graph across collection', async () => {
-    await testGraphql(
-      `
-        query {
-          getUserByUsername(username: "glen") {
-            email
-            avatar
-            posts {
-              title
-              slug
-            }
-          }
-        }
-      `,
-      200,
+    await testTqlOK(
+      query('', (t) => [
+        t.getUserByUsername({ username: 'glen' }, (t) => [
+          t.email(),
+          t.avatar(),
+          t.posts((t) => [t.title(), t.slug()]),
+        ]),
+      ]),
       {
-        ok: true,
-        errors: [],
-        data: {
-          getUserByUsername: {
-            email: 'glen@glen.com',
-            avatar: 'https://www.fillmurray.com/200/200',
-            posts: [
-              { title: 'Best Cats', slug: '1-best-cats' },
-              { title: 'Animals That Are Also Good', slug: '2-also-good-animals' },
-              { title: 'Biggest Cat', slug: '3-biggest-cat' },
-            ],
-          },
+        getUserByUsername: {
+          email: 'glen@glen.com',
+          avatar: 'https://www.fillmurray.com/200/200',
+          posts: [
+            { title: 'Best Cats', slug: '1-best-cats' },
+            { title: 'Animals That Are Also Good', slug: '2-also-good-animals' },
+            { title: 'Biggest Cat', slug: '3-biggest-cat' },
+          ],
         },
       }
     )

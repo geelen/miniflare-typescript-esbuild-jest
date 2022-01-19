@@ -15,7 +15,6 @@ describe('single User', () => {
   test('single precached field', async () => {
     const cache = await caches.open(`holodb:edge`)
     await cache.put(`https://holo.db/${userId}/avatar`, cachedJson('OMFG HAX'))
-    console.log(await cache.match(`https://holo.db/${userId}/avatar`))
 
     await testTqlOK(
       query('', (t) => [

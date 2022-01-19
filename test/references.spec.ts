@@ -1,9 +1,9 @@
 import { testGraphqlOK } from './utils'
 import { PostInput, UserInput } from '@/types'
 
-describe.only('skip all tests', () => {
-  test('x', () => {})
-})
+// describe.only('skip all tests', () => {
+//   test('x', () => {})
+// })
 
 describe('new User', () => {
   test('create & retrieve', async () => {

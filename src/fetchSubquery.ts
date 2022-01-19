@@ -35,8 +35,6 @@ export async function fetchSubquery(
       }
     })
   )
-  console.log({ cachedFields })
-  console.log({ uncachedFields })
 
   if (uncachedFields.length > 0) {
     const stub = NAMESPACE.get(id)
