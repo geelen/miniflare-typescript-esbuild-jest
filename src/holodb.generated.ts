@@ -1,6 +1,7 @@
 import { CreateModel } from '@/CreateModel'
 
 export const HoloDB_User = CreateModel(
+  'User',
   {
     id: 'string',
     createdAt: 'string',
@@ -17,6 +18,7 @@ export const HoloDB_User = CreateModel(
 )
 
 export const HoloDB_Post = CreateModel(
+  'Post',
   {
     id: 'string',
     createdAt: 'string',
