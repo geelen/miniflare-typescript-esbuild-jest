@@ -1,13 +1,34 @@
 import { GraphQLResolveInfo, SelectionNode } from 'graphql'
 import { UpdateBody } from '@/types'
 
-type DoIdentifier = { id: string } | { name: string };
+type DoIdentifier = { id: string } | { name: string }
+declare module globalThis {
+  const MINIFLARE: boolean
+}
+
+function getCacheKey() {
+  // In test mode, we want a way for each DO class & the eyeball to
+  // to have their own cache so we can test propagation
+  if (typeof globalThis.MINIFLARE !== 'undefined') {
+    try {
+      throw new Error()
+    } catch (e: any) {
+      // Todo: not this, obviously. Never this.
+      const namespaceName = e.stack.match(/HoloModel.fetch(\w+)/)
+      if (namespaceName) return `holodb:${namespaceName[1]}`
+    }
+  }
+  // Since we run in different data centres, we wanna use the same cache
+  return 'holodb'
+}
 
 export async function fetchSubquery(
   NAMESPACE: DurableObjectNamespace,
   ref: DoIdentifier,
   fields: ReadonlyArray<SelectionNode>
 ) {
+  const key = getCacheKey()
+
   const id = 'id' in ref ? NAMESPACE.idFromString(ref.id) : NAMESPACE.idFromName(ref.name)
   const stub = NAMESPACE.get(id)
 

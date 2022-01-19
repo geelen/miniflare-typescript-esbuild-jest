@@ -1,5 +1,5 @@
 import { FieldNode, Kind, SelectionNode } from 'graphql'
-import {fetchSubquery, jsonResponse} from '@/utils'
+import { fetchSubquery, jsonResponse } from '@/utils'
 import { CreateBody, UpdateBody } from '@/types'
 
 const isFieldNode = (field: SelectionNode): field is FieldNode =>
@@ -11,11 +11,15 @@ function onlyFetchingId(fields: ReadonlyArray<SelectionNode>) {
 }
 
 export function CreateModel(
+  name: string,
   PRIMITIVE_FIELDS: { [k: string]: string },
   SINGLE_REF_FIELDS: { [k: string]: keyof Bindings },
   COLLECTION_REF_FIELDS: { [k: string]: keyof Bindings }
 ) {
-  return class HoloDB_Base implements DurableObject {
+  // This gives us a named element in the stack trace
+  const fetcherName = `fetch${name}`;
+
+  return class HoloModel implements DurableObject {
     // Store this.state for later access
     constructor(
       private readonly state: DurableObjectState,
@@ -23,6 +27,12 @@ export function CreateModel(
     ) {}
 
     async fetch(request: Request) {
+      // Todo: find a better way to get Model names in stack traces...
+      // @ts-ignore
+      return this[fetcherName](request)
+    }
+
+    async [fetcherName](request: Request) {
       const { pathname } = new URL(request.url)
       if (pathname === '/subquery' && request.method === 'POST') {
         return await this.subquery((await request.json()) as ReadonlyArray<SelectionNode>)
