@@ -8,6 +8,7 @@ import {
   updateBySurrogateKey,
 } from '@/resolvers'
 import { ResolverContext } from '@/types'
+import { jsonResponse } from '@/utils'
 
 export async function handleGraphqlQuery(request: Request, env: Bindings) {
   const context: ResolverContext = { cacheTraces: [] }
@@ -37,17 +38,13 @@ export async function handleGraphqlQuery(request: Request, env: Bindings) {
   const { errors, data } = result
 
   if (errors) {
-    return new Response(JSON.stringify({ ok: false, errors }), {
-      headers: {
-        'content-type': 'application/json',
-      },
-      status: 400,
-    })
+    return jsonResponse({ ok: false, errors }, { status: 400 })
   } else {
-    return new Response(JSON.stringify({ ok: true, errors: [], data }), {
-      headers: {
-        'content-type': 'application/json',
-      },
+    return jsonResponse({
+      ok: true,
+      errors: [],
+      data,
+      cacheTraces: context.cacheTraces,
     })
   }
 }

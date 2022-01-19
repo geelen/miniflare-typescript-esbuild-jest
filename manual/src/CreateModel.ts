@@ -1,9 +1,7 @@
-import { FieldNode, Kind, SelectionNode } from 'graphql'
-import { fetchSubquery, jsonResponse } from '@/utils'
-import { CreateBody, ResolverContext, UpdateBody } from '@/types'
-
-const isFieldNode = (field: SelectionNode): field is FieldNode =>
-  field.kind === Kind.FIELD
+import {SelectionNode} from 'graphql'
+import {isFieldNode, jsonResponse} from '@/utils'
+import {CreateBody, ResolverContext, UpdateBody} from '@/types'
+import {fetchSubquery} from "@/fetchSubquery";
 
 function onlyFetchingId(fields: ReadonlyArray<SelectionNode>) {
   if (fields.length !== 1) return false

@@ -1,46 +1,5 @@
-import { GraphQLResolveInfo, SelectionNode } from 'graphql'
-import {ResolverContext, UpdateBody} from '@/types'
-
-type DoIdentifier = { id: string } | { name: string }
-declare module globalThis {
-  const MINIFLARE: boolean
-}
-
-function getCacheKey() {
-  // In test mode, we want a way for each DO class & the eyeball to
-  // to have their own cache so we can test propagation
-  if (typeof globalThis.MINIFLARE !== 'undefined') {
-    try {
-      throw new Error()
-    } catch (e: any) {
-      // Todo: not this, obviously. Never this.
-      const namespaceName = e.stack.match(/HoloModel.fetch(\w+)/)
-      return namespaceName ? `holodb:${namespaceName[1]}` : `holodb:edge`
-    }
-  }
-  // Since we run in different data centres, we wanna use the same cache
-  return 'holodb'
-}
-
-export async function fetchSubquery(
-  ctx: ResolverContext,
-  NAMESPACE: DurableObjectNamespace,
-  ref: DoIdentifier
-  , fields: ReadonlyArray<SelectionNode>) {
-  const id = 'id' in ref ? NAMESPACE.idFromString(ref.id) : NAMESPACE.idFromName(ref.name)
-
-  const key = getCacheKey()
-  console.log({key})
-  console.log(fields)
-
-  const stub = NAMESPACE.get(id)
-
-  const response = await stub.fetch('https://holo.db/subquery', {
-    method: 'POST',
-    body: JSON.stringify(fields),
-  })
-  return await response.json()
-}
+import { FieldNode, GraphQLResolveInfo, Kind, SelectionNode } from 'graphql'
+import { DoIdentifier, UpdateBody } from '@/types'
 
 export async function doUpdate(
   NAMESPACE: DurableObjectNamespace,
@@ -72,3 +31,17 @@ export const jsonResponse = (data: any, init?: ResponseInit) => {
     },
   })
 }
+export const cachedJson = (data: any, init?: ResponseInit) =>
+  jsonResponse(data, {
+    ...init,
+    headers: {
+      'cache-control': 'immutable',
+      ...init?.headers,
+    },
+  })
+
+export const isFieldNode = (field: SelectionNode): field is FieldNode =>
+  field.kind === Kind.FIELD
+
+export const fieldNames = (fields: ReadonlyArray<SelectionNode>) =>
+  fields.filter(isFieldNode).map((f) => f.name.value)

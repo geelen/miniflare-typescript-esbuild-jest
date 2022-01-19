@@ -28,3 +28,4 @@ export type PostInput = {
 export type ResolverContext = {
   cacheTraces: string[]
 }
+export type DoIdentifier = { id: string } | { name: string }
