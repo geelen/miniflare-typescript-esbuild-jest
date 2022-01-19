@@ -1,5 +1,5 @@
-import { createObject, testTqlOK } from './utils'
-import { query } from '../schema.tql'
+import { createObject, testGraphqlOK, testTqlOK } from './utils'
+import { mutation, query } from '../schema.tql'
 import { cachedJson, jsonResponse } from '@/utils'
 
 describe('single User', () => {
@@ -32,7 +32,14 @@ describe('single User', () => {
 
   test('re-reading same field', async () => {
     await testTqlOK(
-      query('', (t) => [t.getUserById({ id: userId }, (t) => [t.username()])]),
+      query('', (t) => [
+        t.getUserById(
+          {
+            id: userId,
+          },
+          (t) => [t.username()]
+        ),
+      ]),
       {
         getUserById: {
           username: 'glen',
@@ -42,14 +49,65 @@ describe('single User', () => {
     )
 
     await testTqlOK(
-      query('', (t) => [t.getUserById({ id: userId }, (t) => [t.username(), t.email()])]),
+      query('', (t) => [
+        t.getUserById(
+          {
+            id: userId,
+          },
+          (t) => [t.username(), t.email()]
+        ),
+      ]),
       {
         getUserById: {
           username: 'glen',
           email: 'glen@glen.com',
         },
       },
-      [`${userId}/email MISS`, `${userId}/username HIT`]
+      [`${userId}/username HIT`, `${userId}/email MISS`]
+    )
+  })
+
+  test('updating a field', async () => {
+    await testGraphqlOK(
+      `
+        mutation($id: ID!, $input: UpdateUserInput!) {
+          updateUserById(id: $id, input: $input) {
+            username
+            email
+          }
+        }
+      `,
+      {
+        id: userId,
+        input: {
+          email: 'new@email.com',
+        },
+      },
+      {
+        updateUserById: {
+          username: 'glen',
+          email: 'new@email.com',
+        },
+      },
+      [`${userId}/username UPDATE`, `${userId}/email UPDATE`]
+    )
+
+    await testTqlOK(
+      query('', (t) => [
+        t.getUserById(
+          {
+            id: userId,
+          },
+          (t) => [t.username(), t.email()]
+        ),
+      ]),
+      {
+        getUserById: {
+          username: 'glen',
+          email: 'new@email.com',
+        },
+      },
+      [`${userId}/username HIT`, `${userId}/email HIT`]
     )
   })
 })

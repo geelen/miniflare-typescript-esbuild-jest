@@ -1,7 +1,7 @@
 import { GraphQLResolveInfo } from 'graphql'
 import { CreateBody, ResolverContext } from '@/types'
-import { doUpdate} from '@/utils'
 import {fetchSubquery} from "@/fetchSubquery";
+import {doUpdate} from "@/doUpdate";
 
 export const getById =
   (NAMESPACE: DurableObjectNamespace) =>
@@ -64,7 +64,7 @@ export const updateById =
     info: GraphQLResolveInfo
   ) => {
     const { id, input } = args
-    return await doUpdate(NAMESPACE, { id }, info, input)
+    return await doUpdate(ctx, NAMESPACE, { id }, info, input)
   }
 
 export const updateBySurrogateKey =
@@ -76,5 +76,5 @@ export const updateBySurrogateKey =
     info: GraphQLResolveInfo
   ) => {
     const { [keyName]: name, input } = args
-    return await doUpdate(NAMESPACE, { name }, info, input)
+    return await doUpdate(ctx, NAMESPACE, { name }, info, input)
   }
