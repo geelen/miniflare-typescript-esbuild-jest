@@ -24,3 +24,7 @@ export type PostInput = {
   body?: string
   authorId?: string
 }
+
+export type ResolverContext = {
+  cacheTraces: string[]
+}

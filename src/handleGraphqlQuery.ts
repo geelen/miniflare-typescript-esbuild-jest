@@ -1,8 +1,17 @@
 import { ApolloServerBase } from 'apollo-server-core'
 import { schema } from '@/constants'
-import {createWithSurrogateKey, getById, getBySurrogateKey, updateById, updateBySurrogateKey} from "@/resolvers";
+import {
+  createWithSurrogateKey,
+  getById,
+  getBySurrogateKey,
+  updateById,
+  updateBySurrogateKey,
+} from '@/resolvers'
+import { ResolverContext } from '@/types'
 
 export async function handleGraphqlQuery(request: Request, env: Bindings) {
+  const context: ResolverContext = { cacheTraces: [] }
+
   const server = new ApolloServerBase({
     typeDefs: schema,
     resolvers: {
@@ -21,8 +30,10 @@ export async function handleGraphqlQuery(request: Request, env: Bindings) {
         updatePostBySlug: updateBySurrogateKey(env.HOLODB_POST, 'slug'),
       },
     },
+    context,
   })
   const result = await server.executeOperation(await request.json())
+  console.log(result)
   const { errors, data } = result
 
   if (errors) {
