@@ -1,6 +1,7 @@
 import { createObject, testGraphqlOK, testTqlOK } from './utils'
 import { mutation, query } from '../schema.tql'
 import { cachedJson, jsonResponse } from '@/utils'
+import { createPost, createUser } from './references.spec'
 
 describe('single User', () => {
   let userId: string
@@ -104,7 +105,7 @@ describe('single User', () => {
     )
   })
 
-  test.only(`what if we don't read the field back??`, async () => {
+  test(`what if we don't read the field back??`, async () => {
     // Populate the cache
     await testTqlOK(
       query('', (t) => [t.getUserById({ id: userId }, (t) => [t.username(), t.email()])]),
@@ -151,5 +152,85 @@ describe('single User', () => {
       },
       [`${userId}/username HIT`, `${userId}/email HIT`]
     )
+  })
+
+  describe.only('User & Posts', () => {
+    let user1: string, user2: string, post1: string, post2: string
+
+    beforeEach(async () => {
+      user1 = await createObject(
+        'HOLODB_USER',
+        { username: 'glen' },
+        { email: 'glen@glen.com', avatar: 'https://www.fillmurray.com/200/200' }
+      )
+      user2 = await createObject(
+        'HOLODB_USER',
+        { username: 'prince' },
+        { email: 'prince@prince.com' }
+      )
+      post1 = await createObject(
+        'HOLODB_POST',
+        { slug: '1-best-cats' },
+        {
+          title: 'Best Cats',
+          body: `# The World's Best Cats\n\n* Principles\n* Whitney`,
+        }
+      )
+      post2 = await createObject(
+        'HOLODB_POST',
+        { slug: '2-also-good-animals' },
+        {
+          title: 'Animals That Are Also Good',
+          body: `# Animals That Are Also Good\n\n* Stevie\n* Buster`,
+        }
+      )
+    })
+
+    test(`mutating single references`, async () => {
+      // Fetch the null author
+      await testTqlOK(
+        query('', (t) => [
+          t.getPostById({ id: post1 }, (t) => [
+            t.slug(),
+            t.author((t) => [t.username()]),
+          ]),
+        ]),
+        {
+          getPostById: {
+            slug: '1-best-cats',
+            // @ts-ignore gotta fix that Jest bug with comparing nulls...
+            author: '<null>',
+          },
+        },
+        [`${post1}/slug MISS`, `${post1}/author/username MISS`]
+      )
+
+      // Update authorId and read the join
+      await testGraphqlOK(
+        `
+          mutation($id: ID!, $input: UpdatePostInput!) {
+            updatePostById(id: $id, input: $input) {
+              author {
+                username
+              }
+            }
+          }
+        `,
+        {
+          id: post1,
+          input: {
+            authorId: user1,
+          }
+        },
+        {
+          updatePostById: {
+            author: {
+              username: 'glen',
+            },
+          },
+        },
+        [`${post1}/updatedAt UPDATE`, `${post1}/author INVALIDATE`]
+      )
+    })
   })
 })

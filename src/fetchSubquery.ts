@@ -15,6 +15,8 @@ export async function fetchSubquery(
   const cachedFields: Record<string, any> = {}
   const uncachedFields: SelectionNode[] = []
 
+  // TODO: make nested. Crawl deep. Basically find any part of the grapqhl query that
+  // has already been touched and snip it off.
   const hitsAndMisses = await Promise.all(
     fields.map(async (field) => {
       // No idea how to handle these yet
@@ -50,6 +52,7 @@ export async function fetchSubquery(
     await Promise.all(
       Object.entries(newData).map(async ([fieldName, result]) => {
         const cacheKey = `${id.toString()}/${fieldName}`
+        // need to do recursion here too
         await cache.put(`https://holo.db/${cacheKey}`, cachedJson(result))
       })
     )
