@@ -29,13 +29,14 @@ export async function testGraphql(
 export async function testGraphqlOK<T = any>(
   query: string,
   variables: any,
-  expectedData: T
+  expectedData: T,
+  cacheTraces: string[] = expect.anything()
 ): Promise<{ data: T }> {
   return (await testGraphql({ query, variables }, 200, {
     ok: true,
     errors: [],
     data: expectedData,
-    cacheTraces: expect.anything()
+    cacheTraces
   })) as { data: T }
 }
 

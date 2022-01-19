@@ -1,7 +1,7 @@
-import { DoIdentifier, ResolverContext } from '@/types'
-import { SelectionNode } from 'graphql'
-import { getCache } from '@/cache'
-import { cachedJson, fieldNames, isFieldNode } from '@/utils'
+import {DoIdentifier, ResolverContext} from '@/types'
+import {SelectionNode} from 'graphql'
+import {getCache} from '@/cache'
+import {cachedJson, isFieldNode, isTruthy} from '@/utils'
 
 export async function fetchSubquery(
   ctx: ResolverContext,
@@ -15,7 +15,7 @@ export async function fetchSubquery(
   const cachedFields: Record<string, any> = {}
   const uncachedFields: SelectionNode[] = []
 
-  await Promise.all(
+  const hitsAndMisses = await Promise.all(
     fields.map(async (field) => {
       // No idea how to handle these yet
       if (!isFieldNode(field)) {
@@ -28,13 +28,17 @@ export async function fetchSubquery(
       const match = await cache.match(`https://holo.db/${cacheKey}`)
       if (match) {
         cachedFields[fieldName] = await match.json()
-        ctx.cacheTraces.push(`${cacheKey} HIT`)
+        return `${cacheKey} HIT`
       } else {
         uncachedFields.push(field)
-        ctx.cacheTraces.push(`${cacheKey} MISS`)
+        return `${cacheKey} MISS`
       }
     })
   )
+
+  // We do this once at the end so that the order of fields matches the input query
+  // (otherwise we'd be subject to a race for the `cache.match` call above.
+  ctx.cacheTraces.push(...hitsAndMisses.filter(isTruthy))
 
   if (uncachedFields.length > 0) {
     const stub = NAMESPACE.get(id)
