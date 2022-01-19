@@ -6,7 +6,6 @@ export async function getCache() {
 // Note: the partition is just for local dev so that each part of the app has its own cache.
   // In production, we want everything to share a Cache as much as possible
   const key = getCacheKey()
-  console.log({key})
   return await caches.open(key)
 }
 

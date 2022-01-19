@@ -34,7 +34,6 @@ export async function handleGraphqlQuery(request: Request, env: Bindings) {
     context,
   })
   const result = await server.executeOperation(await request.json())
-  console.log(result)
   const { errors, data } = result
 
   if (errors) {
