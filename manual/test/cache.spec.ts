@@ -137,7 +137,7 @@ describe('single User', () => {
           username: 'glen',
         },
       },
-      [`${userId}/username UPDATE`/*, `${userId}/email UPDATE`*/]
+      [`${userId}/updatedAt UPDATE`, `${userId}/email UPDATE`]
     )
 
     // Reading again should give us the new (already cached) data
