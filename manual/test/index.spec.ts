@@ -14,13 +14,12 @@ describe('single User', () => {
     await testGraphql(
       {
         query: `
-        query {
-          getUserByUsername(username: "glen") {
-            email
-            createdAt
+          query {
+            getUserByUsername(username: "glen") {
+              email
+            }
           }
-        }
-      `,
+        `,
       },
       200,
       {
@@ -29,9 +28,6 @@ describe('single User', () => {
         data: {
           getUserByUsername: {
             email: 'glen@glen.com',
-            createdAt: expect.stringMatching(
-              /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/
-            ),
           },
         },
       }
@@ -45,6 +41,7 @@ describe('single User', () => {
           getUserByUsername(username: "glen") {
             email
             avatar
+            createdAt            
           }
         }
       `,
@@ -56,6 +53,9 @@ describe('single User', () => {
           getUserByUsername: {
             email: 'glen@glen.com',
             avatar: 'https://www.fillmurray.com/200/200',
+            createdAt: expect.stringMatching(
+              /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/
+            ),
           },
         },
       }

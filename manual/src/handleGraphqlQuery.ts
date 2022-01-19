@@ -1,11 +1,8 @@
 import { ApolloServerBase } from 'apollo-server-core'
 import { schema } from '@/constants'
 import { getBySurrogateKey, createWithSurrogateKey, getById, updateById, updateBySurrogateKey } from '@/utils'
-import { Cache } from './cache'
 
 export async function handleGraphqlQuery(request: Request, env: Bindings) {
-  const cache = await Cache(`holodb:eyeball`)
-
   const server = new ApolloServerBase({
     typeDefs: schema,
     resolvers: {
