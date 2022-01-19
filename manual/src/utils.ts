@@ -1,5 +1,5 @@
 import { GraphQLResolveInfo, SelectionNode } from 'graphql'
-import { UpdateBody } from '@/types'
+import {ResolverContext, UpdateBody} from '@/types'
 
 type DoIdentifier = { id: string } | { name: string }
 declare module globalThis {
@@ -15,7 +15,7 @@ function getCacheKey() {
     } catch (e: any) {
       // Todo: not this, obviously. Never this.
       const namespaceName = e.stack.match(/HoloModel.fetch(\w+)/)
-      if (namespaceName) return `holodb:${namespaceName[1]}`
+      return namespaceName ? `holodb:${namespaceName[1]}` : `holodb:edge`
     }
   }
   // Since we run in different data centres, we wanna use the same cache
@@ -23,13 +23,16 @@ function getCacheKey() {
 }
 
 export async function fetchSubquery(
+  ctx: ResolverContext,
   NAMESPACE: DurableObjectNamespace,
-  ref: DoIdentifier,
-  fields: ReadonlyArray<SelectionNode>
-) {
-  const key = getCacheKey()
-
+  ref: DoIdentifier
+  , fields: ReadonlyArray<SelectionNode>) {
   const id = 'id' in ref ? NAMESPACE.idFromString(ref.id) : NAMESPACE.idFromName(ref.name)
+
+  const key = getCacheKey()
+  console.log({key})
+  console.log(fields)
+
   const stub = NAMESPACE.get(id)
 
   const response = await stub.fetch('https://holo.db/subquery', {

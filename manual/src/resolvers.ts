@@ -1,5 +1,5 @@
 import { GraphQLResolveInfo } from 'graphql'
-import { CreateBody } from '@/types'
+import { CreateBody, ResolverContext } from '@/types'
 import { doUpdate, fetchSubquery } from '@/utils'
 
 export const getById =
@@ -7,12 +7,12 @@ export const getById =
   async (
     parent: any,
     args: { [k: string]: string },
-    ctx: any,
+    ctx: ResolverContext,
     info: GraphQLResolveInfo
   ) => {
     const id = args.id
     const subQueryNodes = info.fieldNodes[0].selectionSet!.selections
-    return await fetchSubquery(NAMESPACE, { id }, subQueryNodes)
+    return await fetchSubquery(ctx, NAMESPACE, { id }, subQueryNodes)
   }
 
 export const getBySurrogateKey =
@@ -20,17 +20,23 @@ export const getBySurrogateKey =
   async (
     parent: any,
     args: { [k: string]: string },
-    ctx: any,
+    ctx: ResolverContext,
     info: GraphQLResolveInfo
   ) => {
+    console.log({ ctx })
     const name = args[keyName]
     const subQueryNodes = info.fieldNodes[0].selectionSet!.selections
-    return await fetchSubquery(NAMESPACE, { name }, subQueryNodes)
+    return await fetchSubquery(ctx, NAMESPACE, { name }, subQueryNodes)
   }
 
 export const createWithSurrogateKey =
   (NAMESPACE: DurableObjectNamespace, keyName: string) =>
-  async (parent: any, args: { input: any }, ctx: any, info: GraphQLResolveInfo) => {
+  async (
+    parent: any,
+    args: { input: any },
+    ctx: ResolverContext,
+    info: GraphQLResolveInfo
+  ) => {
     const subQueryNodes = info.fieldNodes[0].selectionSet!.selections
 
     const input = args.input
@@ -54,7 +60,7 @@ export const updateById =
   async (
     parent: any,
     args: { id: string; input: any },
-    ctx: any,
+    ctx: ResolverContext,
     info: GraphQLResolveInfo
   ) => {
     const { id, input } = args
@@ -66,7 +72,7 @@ export const updateBySurrogateKey =
   async (
     parent: any,
     args: { input: any; [k: string]: string },
-    ctx: any,
+    ctx: ResolverContext,
     info: GraphQLResolveInfo
   ) => {
     const { [keyName]: name, input } = args

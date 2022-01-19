@@ -1,51 +1,9 @@
 import { testGraphqlOK } from './utils'
 import { PostInput, UserInput } from '@/types'
 
-export async function createUser(user: UserInput) {
-  const response = await testGraphqlOK<{
-    createUser: {
-      id: string
-    }
-  }>(
-    `
-      mutation CreateUser($input: CreateUserInput!) {
-        createUser(input: $input) {
-          id
-        }
-      }
-    `,
-    {
-      input: user,
-    },
-    {
-      createUser: {
-        id: expect.stringMatching(/^[a-z0-9]{64}$/),
-      },
-    }
-  )
-  return response.data.createUser.id
-}
-
-export async function createPost(post: PostInput) {
-  const response = await testGraphqlOK(
-    `
-      mutation CreatePost($input: CreatePostInput!) {
-        createPost(input: $input) {
-          id
-        }
-      }
-    `,
-    {
-      input: post,
-    },
-    {
-      createPost: {
-        id: expect.stringMatching(/^[a-z0-9]{64}$/),
-      },
-    }
-  )
-  return response.data.createPost.id
-}
+describe.only('skip all tests', () => {
+  test('x', () => {})
+})
 
 describe('new User', () => {
   test('create & retrieve', async () => {
@@ -287,3 +245,49 @@ describe('new User & Post', () => {
     )
   })
 })
+
+export async function createUser(user: UserInput) {
+  const response = await testGraphqlOK<{
+    createUser: {
+      id: string
+    }
+  }>(
+    `
+      mutation CreateUser($input: CreateUserInput!) {
+        createUser(input: $input) {
+          id
+        }
+      }
+    `,
+    {
+      input: user,
+    },
+    {
+      createUser: {
+        id: expect.stringMatching(/^[a-z0-9]{64}$/),
+      },
+    }
+  )
+  return response.data.createUser.id
+}
+
+export async function createPost(post: PostInput) {
+  const response = await testGraphqlOK(
+    `
+      mutation CreatePost($input: CreatePostInput!) {
+        createPost(input: $input) {
+          id
+        }
+      }
+    `,
+    {
+      input: post,
+    },
+    {
+      createPost: {
+        id: expect.stringMatching(/^[a-z0-9]{64}$/),
+      },
+    }
+  )
+  return response.data.createPost.id
+}

@@ -1,6 +1,6 @@
 import { FieldNode, Kind, SelectionNode } from 'graphql'
 import { fetchSubquery, jsonResponse } from '@/utils'
-import { CreateBody, UpdateBody } from '@/types'
+import { CreateBody, ResolverContext, UpdateBody } from '@/types'
 
 const isFieldNode = (field: SelectionNode): field is FieldNode =>
   field.kind === Kind.FIELD
@@ -17,7 +17,7 @@ export function CreateModel(
   COLLECTION_REF_FIELDS: { [k: string]: keyof Bindings }
 ) {
   // This gives us a named element in the stack trace
-  const fetcherName = `fetch${name}`;
+  const fetcherName = `fetch${name}`
 
   return class HoloModel implements DurableObject {
     // Store this.state for later access
@@ -47,6 +47,7 @@ export function CreateModel(
 
     async subquery(selection: ReadonlyArray<SelectionNode>) {
       const { storage } = this.state
+      const ctx: ResolverContext = { cacheTraces: [] }
 
       // Never allow an un-created Object to be queried
       if ((await storage.get('id')) === undefined) return jsonResponse({})
@@ -69,6 +70,7 @@ export function CreateModel(
                   } else {
                     const NAMESPACE = this.env[SINGLE_REF_FIELDS[fieldName]]
                     subqueryResponse[fieldName] = await fetchSubquery(
+                      ctx,
                       NAMESPACE,
                       { id },
                       fields
@@ -91,7 +93,7 @@ export function CreateModel(
                   const NAMESPACE = this.env[COLLECTION_REF_FIELDS[fieldName]]
                   subqueryResponse[fieldName] = await Promise.all(
                     refs.map(async (id) => {
-                      return await fetchSubquery(NAMESPACE, { id }, fields)
+                      return await fetchSubquery(ctx, NAMESPACE, { id }, fields)
                     })
                   )
                 }
