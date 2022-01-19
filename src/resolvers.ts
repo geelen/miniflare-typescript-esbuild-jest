@@ -1,6 +1,7 @@
 import { GraphQLResolveInfo } from 'graphql'
 import { CreateBody, ResolverContext } from '@/types'
-import { doUpdate, fetchSubquery } from '@/utils'
+import { doUpdate} from '@/utils'
+import {fetchSubquery} from "@/fetchSubquery";
 
 export const getById =
   (NAMESPACE: DurableObjectNamespace) =>
@@ -23,7 +24,6 @@ export const getBySurrogateKey =
     ctx: ResolverContext,
     info: GraphQLResolveInfo
   ) => {
-    console.log({ ctx })
     const name = args[keyName]
     const subQueryNodes = info.fieldNodes[0].selectionSet!.selections
     return await fetchSubquery(ctx, NAMESPACE, { name }, subQueryNodes)

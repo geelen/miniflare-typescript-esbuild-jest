@@ -40,12 +40,14 @@ export async function testGraphqlOK<T = any>(
 
 export async function testTqlOK<T extends Array<Selection>>(
   query: Operation<SelectionSet<T>>,
-  expectedData: Result<IQuery, SelectionSet<T>>
+  expectedData: Result<IQuery, SelectionSet<T>>,
+  cacheTraces: string[] = []
 ): Promise<{ data: any }> {
   return (await testGraphql({ query: query.toString(), variables: {} }, 200, {
     ok: true,
     errors: [],
     data: expectedData,
+    cacheTraces
   })) as { data: any }
 }
 
