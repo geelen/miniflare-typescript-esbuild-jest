@@ -12,7 +12,7 @@ describe('single User', () => {
     )
   })
 
-  test('single field', async () => {
+  test('single precached field', async () => {
     const cache = await caches.open(`holodb:edge`)
     await cache.put(`https://holo.db/${userId}/avatar`, cachedJson('OMFG HAX'))
     console.log(await cache.match(`https://holo.db/${userId}/avatar`))
@@ -28,6 +28,29 @@ describe('single User', () => {
         },
       },
       [`${userId}/email MISS`, `${userId}/avatar HIT`]
+    )
+  })
+
+  test('re-reading same field', async () => {
+    await testTqlOK(
+      query('', (t) => [t.getUserById({ id: userId }, (t) => [t.username()])]),
+      {
+        getUserById: {
+          username: 'glen',
+        },
+      },
+      [`${userId}/username MISS`]
+    )
+
+    await testTqlOK(
+      query('', (t) => [t.getUserById({ id: userId }, (t) => [t.username(), t.email()])]),
+      {
+        getUserById: {
+          username: 'glen',
+          email: 'glen@glen.com',
+        },
+      },
+      [`${userId}/email MISS`, `${userId}/username HIT`]
     )
   })
 })

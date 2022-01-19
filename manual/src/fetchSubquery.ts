@@ -1,7 +1,7 @@
 import { DoIdentifier, ResolverContext } from '@/types'
 import { SelectionNode } from 'graphql'
 import { getCache } from '@/cache'
-import { fieldNames, isFieldNode } from '@/utils'
+import { cachedJson, fieldNames, isFieldNode } from '@/utils'
 
 export async function fetchSubquery(
   ctx: ResolverContext,
@@ -25,7 +25,7 @@ export async function fetchSubquery(
 
       const fieldName = field.name.value
       const cacheKey = `${id.toString()}/${fieldName}`
-      const match = await cache.match('https://holo.db/' + cacheKey)
+      const match = await cache.match(`https://holo.db/${cacheKey}`)
       if (match) {
         cachedFields[fieldName] = await match.json()
         ctx.cacheTraces.push(`${cacheKey} HIT`)
@@ -44,7 +44,13 @@ export async function fetchSubquery(
       method: 'POST',
       body: JSON.stringify(uncachedFields),
     })
-    const newData = await response.json()
+    const newData = (await response.json()) as Record<string, any>
+    await Promise.all(
+      Object.entries(newData).map(async ([fieldName, result]) => {
+        const cacheKey = `${id.toString()}/${fieldName}`
+        await cache.put(`https://holo.db/${cacheKey}`, cachedJson(result))
+      })
+    )
     Object.assign(cachedFields, newData)
   }
 
