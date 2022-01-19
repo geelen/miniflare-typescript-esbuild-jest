@@ -93,14 +93,56 @@ describe('single User', () => {
     )
 
     await testTqlOK(
-      query('', (t) => [
-        t.getUserById(
-          {
-            id: userId,
-          },
-          (t) => [t.username(), t.email()]
-        ),
-      ]),
+      query('', (t) => [t.getUserById({ id: userId }, (t) => [t.username(), t.email()])]),
+      {
+        getUserById: {
+          username: 'glen',
+          email: 'new@email.com',
+        },
+      },
+      [`${userId}/username HIT`, `${userId}/email HIT`]
+    )
+  })
+
+  test.only(`what if we don't read the field back??`, async () => {
+    // Populate the cache
+    await testTqlOK(
+      query('', (t) => [t.getUserById({ id: userId }, (t) => [t.username(), t.email()])]),
+      {
+        getUserById: {
+          username: 'glen',
+          email: 'glen@glen.com',
+        },
+      },
+      [`${userId}/username MISS`, `${userId}/email MISS`]
+    )
+
+    // Update Email but only read Username
+    await testGraphqlOK(
+      `
+        mutation($id: ID!, $input: UpdateUserInput!) {
+          updateUserById(id: $id, input: $input) {
+            username
+          }
+        }
+      `,
+      {
+        id: userId,
+        input: {
+          email: 'new@email.com',
+        },
+      },
+      {
+        updateUserById: {
+          username: 'glen',
+        },
+      },
+      [`${userId}/username UPDATE`/*, `${userId}/email UPDATE`*/]
+    )
+
+    // Reading again should give us the new (already cached) data
+    await testTqlOK(
+      query('', (t) => [t.getUserById({ id: userId }, (t) => [t.username(), t.email()])]),
       {
         getUserById: {
           username: 'glen',
